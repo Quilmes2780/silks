@@ -1,6 +1,8 @@
 import { useCommand, useQuery } from '../api';
 import { Bar, ClassPill, Fig, HorseLink, Loading, Money, RaceLink, SilksIcon } from '../components/common';
 import { navigate } from '../router';
+import type { OfficeExtras } from '../../engine/game/econQueries';
+import { Link } from '../components/common';
 
 export function OfficeScreen() {
   const { data, error } = useQuery('office', undefined);
@@ -34,6 +36,9 @@ export function OfficeScreen() {
                   if (!m.read) run('markInboxRead', { ids: [m.id] });
                   if (m.raceId) navigate({ name: 'race', id: m.raceId });
                   else if (m.horseId) navigate({ name: 'horse', id: m.horseId });
+                  else if (m.staffId) navigate({ name: 'staff' });
+                  else if (m.kind === 'market') navigate({ name: 'market' });
+                  else if (m.kind === 'finance') navigate({ name: 'finance' });
                 }}
               >
                 <div className="row">
@@ -59,7 +64,16 @@ export function OfficeScreen() {
                 <span className="v"><Money v={data.finance.seasonPrize} /></span>
                 <span className="l">Preisgeld Saison</span>
               </div>
+              <div className="metric">
+                <span className="v"><Money v={data.finance.seasonNet} /></span>
+                <span className="l">Ergebnis Saison</span>
+              </div>
+              <div className="metric">
+                <span className="v"><Money v={data.extras.weeklyFixed} /></span>
+                <span className="l">feste Kosten/Woche</span>
+              </div>
             </div>
+            {data.extras.overdraft && <div className="notice bad" style={{ marginTop: 8 }}>Dispolimit überschritten – die Bank droht mit Zwangsverkauf.</div>}
             <table className="data" style={{ marginTop: 8 }}>
               <tbody>
                 {data.finance.lastEntries.slice(0, 6).map((l, i) => (
@@ -71,6 +85,7 @@ export function OfficeScreen() {
               </tbody>
             </table>
           </div>
+          <StableStatus extras={data.extras} />
           {data.lastSummary && (
             <div className="card small">
               <h3>Letzte Woche</h3>
@@ -172,6 +187,24 @@ export function OfficeScreen() {
           </tbody>
         </table>
       </div>
+    </div>
+  );
+}
+
+function StableStatus({ extras }: { extras: OfficeExtras }) {
+  const items: React.ReactNode[] = [];
+  if (extras.liveAuction) items.push(<span key="a">Auktion läuft: <Link to={{ name: 'auction', id: extras.liveAuction.id }}>{extras.liveAuction.name}</Link></span>);
+  if (extras.openOffers) items.push(<span key="o"><Link to={{ name: 'market', tab: 'offers' }}>{extras.openOffers} offene{extras.openOffers === 1 ? 's Angebot' : ' Angebote'}</Link> für deine Pferde</span>);
+  for (const l of extras.leaving) items.push(<span key={'l' + l.id}>{l.role} {l.name}: {l.reason} zum {l.week} – <Link to={{ name: 'staff' }}>Personal</Link></span>);
+  if (extras.expiringContracts.length)
+    items.push(<span key="c">Verträge laufen aus: {extras.expiringContracts.map((c) => c.name).join(', ')} – <Link to={{ name: 'staff' }}>verlängern</Link></span>);
+  items.push(<span key="b">{extras.freeBoxes} freie Box{extras.freeBoxes === 1 ? '' : 'en'} – <Link to={{ name: 'facilities' }}>Anlage</Link></span>);
+  return (
+    <div className="card small">
+      <h3>Lage im Stall</h3>
+      {items.map((i, k) => (
+        <div key={k} style={{ marginBottom: 4 }}>• {i}</div>
+      ))}
     </div>
   );
 }

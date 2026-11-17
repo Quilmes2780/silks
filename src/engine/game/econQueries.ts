@@ -169,7 +169,7 @@ export function staffOfferHint(g: GameState, staffId: string): { demand: number;
   const th = acceptThreshold(g, s, g.playerStableId);
   const d = salaryDemand(s);
   const ratio = th / d;
-  return { demand: d, mood: ratio < 0.92 ? 'würde gern für dich arbeiten' : ratio < 1.02 ? 'erwartet ein faires Angebot' : 'ist schwer zu überzeugen' };
+  return { demand: d, mood: ratio < 0.9 ? 'würde gern für dich arbeiten' : ratio < 0.97 ? 'ist offen für Verhandlungen' : ratio <= 1 ? 'erwartet die volle Forderung' : 'ist schwer zu überzeugen' };
 }
 
 // ---------------------------------------------------------------- Finanzen
@@ -209,7 +209,9 @@ export interface FinanceView {
     name: string;
     active: boolean;
     weeks: number;
+    /** Kaufpreis oder Einstandswert */
     purchase: number;
+    bought: boolean;
     running: number;
     income: number;
     sale: number;
@@ -243,7 +245,9 @@ export function financeView(g: GameState, season?: number): FinanceView {
   const accounts = Object.values(g.finance.horses).map((acc) => {
     const h = g.horses[acc.horseId];
     const k = acc.byKind;
-    const purchase = -(k.purchase ?? 0);
+    // Ohne Kauf (Startpferde, eigene Zucht) zählt der erste Marktwert als Einstandswert
+    const opening = k.purchase ? 0 : (h?.valueHistory.find((p) => p.weekIndex >= acc.fromWeekIndex)?.value ?? h?.valueHistory.at(-1)?.value ?? 0);
+    const purchase = -(k.purchase ?? 0) + opening;
     const sale = k.sale ?? 0;
     const income = (k.prize ?? 0) + (k.prize_share ?? 0);
     const running = (k.upkeep ?? 0) + (k.salary ?? 0) + (k.facility ?? 0) + (k.vet ?? 0) + (k.entry_fee ?? 0) + (k.jockey_fee ?? 0) + (k.other ?? 0);
@@ -257,6 +261,7 @@ export function financeView(g: GameState, season?: number): FinanceView {
       active,
       weeks: (acc.toWeekIndex ?? g.weekIndex) - acc.fromWeekIndex,
       purchase: Math.round(purchase),
+      bought: !!k.purchase,
       running: Math.round(running),
       income: Math.round(income),
       sale: Math.round(sale),

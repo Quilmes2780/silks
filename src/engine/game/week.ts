@@ -11,7 +11,7 @@ import { breedHorse } from '../economy/stallions';
 import { auctionWeek, closeAuctions } from '../market/auction';
 import { marketWeek, transferHorse } from '../market/transfer';
 import { declareRace, runRace } from './raceDay';
-import { addInbox, book, formatMoney, type GameState, sortedById, touch, type WeekSummary, weekIndexOf } from './state';
+import { addInbox, book, formatMoney, type GameState, sortedById, touch, type WeekSummary, usedHorseNames, weekIndexOf } from './state';
 
 /**
  * Wochenschleife:
@@ -193,7 +193,7 @@ export function advanceWeek(g: GameState, now: () => number = () => 0): WeekSumm
 /** Jahreswechsel: Alterung (implizit über foalYear), Ruhestand, neue Zweijährige, Personal. */
 export function seasonTurnover(g: GameState): void {
   const r = new Rng(g.seed).fork('turnover', g.season);
-  const names = new NameRegistry(Object.values(g.horses).map((h) => h.name));
+  const names = new NameRegistry(usedHorseNames(g));
   let retired = 0;
   for (const h of sortedById(Object.values(g.horses))) {
     if (h.status !== 'active') continue;

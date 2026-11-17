@@ -55,6 +55,11 @@ export interface HeaderView {
   unread: number;
   runnersThisWeek: number;
   randomness: number;
+  overdraftLimit: number;
+  /** offene Angebote, Gegenangebote, laufende Auktion */
+  marketAlerts: number;
+  /** Abgänge und auslaufende Verträge */
+  staffAlerts: number;
 }
 
 function stableRef(g: GameState, id: string): StableRef {
@@ -78,6 +83,13 @@ export function headerView(g: GameState): HeaderView {
     unread: g.inbox.filter((m) => !m.read).length,
     runnersThisWeek,
     randomness: g.config.randomness,
+    overdraftLimit: g.config.overdraftLimit,
+    marketAlerts:
+      g.offers.filter((o) => (o.sellerId === g.playerStableId && o.status === 'open') || (o.buyerId === g.playerStableId && o.status === 'countered')).length +
+      Object.values(g.auctions).filter((a) => a.status === 'live').length,
+    staffAlerts: Object.values(g.staff).filter(
+      (x) => x.contract?.stableId === g.playerStableId && (x.leaving !== null || (g.week >= 44 && x.contract.endSeason <= g.season)),
+    ).length,
   };
 }
 

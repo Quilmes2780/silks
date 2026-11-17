@@ -287,7 +287,8 @@ export function acceptThreshold(g: GameState, s: Staff, stableId: string): numbe
   const own = s.contract?.stableId === stableId;
   if (own) return Math.round(demand * (1.15 - s.morale / 200));
   const rep = g.stables[stableId]!.reputation;
-  return Math.round(demand * (1.08 - rep / 400));
+  // Die volle Forderung reicht immer; ein guter Ruf bringt Rabatt
+  return Math.round(demand * Math.min(1, 1.02 - rep / 350));
 }
 
 export function contractEndSeason(g: GameState, years: number): number {

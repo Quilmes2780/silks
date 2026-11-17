@@ -14,6 +14,7 @@ import {
   MARKET_STABLE_ID,
   sortedById,
   touch,
+  usedHorseNames,
   weekIndexOf,
 } from '../game/state';
 import { freeBoxes, MarketError, roundPrice, transferHorse } from './transfer';
@@ -103,7 +104,8 @@ export function auctionWeek(g: GameState): void {
     for (const season of [g.season, g.season + 1]) {
       const wi = weekIndexOf(g, season, s.week);
       const id = `${season}-${s.kind}`;
-      if (wi - CATALOGUE_WEEKS === g.weekIndex && !g.auctions[id]) createCatalogue(g, s.kind, season);
+      // auch verspätet (z. B. nach Migration), solange die Auktion noch bevorsteht
+      if (g.weekIndex >= wi - CATALOGUE_WEEKS && g.weekIndex <= wi && !g.auctions[id]) createCatalogue(g, s.kind, season);
     }
   }
   for (const a of sortedById(Object.values(g.auctions))) {
@@ -115,7 +117,7 @@ export function createCatalogue(g: GameState, kind: AuctionKind, season: number)
   const s = AUCTION_SCHEDULE.find((x) => x.kind === kind)!;
   const a: Auction = { id: `${season}-${kind}`, kind, name: `${s.name} ${season}`, season, week: s.week, weekIndex: weekIndexOf(g, season, s.week), lots: [], status: 'catalogue' };
   const r = new Rng(g.seed).fork('auction', a.id);
-  const names = new NameRegistry(Object.values(g.horses).map((h) => h.name));
+  const names = new NameRegistry(usedHorseNames(g));
   if (kind === 'breeze_up' || kind === 'yearling') {
     const age = kind === 'breeze_up' ? 2 : 1;
     for (let i = 0; i < s.lots; i++) {

@@ -170,3 +170,15 @@ input[type=range] { accent-color: var(--green); }
 .swatch.on { outline: 2px solid var(--brass); outline-offset: 1px; }
 .empty { padding: 28px; text-align: center; color: var(--ink-3); font-style: italic; }
 .loading { padding: 40px; text-align: center; color: var(--ink-3); }
+
+/* Phase 3: Personal, Markt, Finanzen */
+.stars { color: var(--brass); letter-spacing: 1px; white-space: nowrap; }
+.money-input { width: 110px; font-family: var(--mono); }
+.topbar .balance.neg a { color: var(--red); }
+.notice { background: #f4e5c4; border: 1px solid #e2c88a; border-radius: 6px; padding: 10px 14px; color: #5a4512; }
+.notice.bad { background: #f1d4cf; border-color: #d9a49b; color: var(--red); }
+.lot-live { background: #fbf6e6; }
+.lot-sold td { color: var(--ink-3); }
+table.data tr.lot-mine td { background: #eef4ea; }
+.num-pos { color: var(--ok); }
+.num-neg { color: var(--red); }

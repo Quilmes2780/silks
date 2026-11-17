@@ -7,6 +7,7 @@ import { navigate } from '../router';
 import type { CareerRow, ConditionRow, HorseProfileView, RunLink } from '../../engine/game/queries';
 import type { TrainingBlock, TrainingPlan } from '../../engine/types';
 import { EVENT_LABEL } from '../../engine/game/format';
+import { MarketTab } from './HorseMarket';
 
 const TABS: Array<[string, string]> = [
   ['overview', 'Übersicht'],
@@ -14,6 +15,7 @@ const TABS: Array<[string, string]> = [
   ['training', 'Training'],
   ['health', 'Gesundheit'],
   ['pedigree', 'Abstammung'],
+  ['market', 'Markt & Pflege'],
 ];
 
 export function HorseScreen({ id, tab = 'overview' }: { id: string; tab?: string }) {
@@ -30,6 +32,12 @@ export function HorseScreen({ id, tab = 'overview' }: { id: string; tab?: string
           </h1>
           <div className="muted">
             {h.age}j {h.sex} · {h.colour} · {h.stable.name} · Trainer {h.trainerName} · {h.status}
+            {h.market.value !== null && (
+              <>
+                {' '}
+                · Marktwert <Money v={h.market.value} />
+              </>
+            )}
           </div>
         </div>
         <div style={{ flex: 1 }} />
@@ -51,6 +59,7 @@ export function HorseScreen({ id, tab = 'overview' }: { id: string; tab?: string
       {tab === 'training' && h.own && <Training h={h} />}
       {tab === 'health' && h.own && <Health h={h} />}
       {tab === 'pedigree' && <Pedigree h={h} />}
+      {tab === 'market' && <MarketTab h={h} />}
     </div>
   );
 }
@@ -131,7 +140,7 @@ function Overview({ h }: { h: HorseProfileView }) {
       <div className="grid two">
         <div className="card">
           <h3>Formkurve (letzte 10 Speed Figures)</h3>
-          <FormChart h={h} />
+          {h.figurePrecision === 0 ? <NoAnalyst /> : <FormChart h={h} />}
         </div>
         <div className="card">
           <h3>Geschätzte Werte</h3>
@@ -344,7 +353,9 @@ function Stats({ h }: { h: HorseProfileView }) {
       <div className="grid two">
         <div className="card">
           <h3>Distanz × Boden (Ø Speed Figure)</h3>
-          {h.heatmap.cells.length === 0 ? (
+          {h.figurePrecision === 0 ? (
+            <NoAnalyst />
+          ) : h.heatmap.cells.length === 0 ? (
             <div className="empty">Noch keine Starts.</div>
           ) : (
             <Chart
@@ -367,7 +378,7 @@ function Stats({ h }: { h: HorseProfileView }) {
                       <td className="small">{l.dateLabel}</td>
                       <td><RaceLink id={l.raceId} name={l.raceName} tab="result" /></td>
                       <td className="num">{l.position}.</td>
-                      <td className="num"><span className="fig">{l.speedFigure}</span></td>
+                      <td className="num"><Fig v={l.speedFigure} /></td>
                     </tr>
                   ))}
                 </tbody>
@@ -449,8 +460,8 @@ function CondTable({ title, rows }: { title: string; rows: ConditionRow[] }) {
               <tr key={r.key}>
                 <td className="small">{r.label}</td>
                 <td className="num"><RunLinkValue runIds={r.cell.runIds} label={r.cell.n} /></td>
-                <td className="num"><span className="fig">{Math.round(r.cell.meanFigure)}</span></td>
-                <td className="num">{r.cell.bestFigure}</td>
+                <td className="num"><Fig v={r.cell.meanFigure === null ? null : Math.round(r.cell.meanFigure)} /></td>
+                <td className="num"><Fig v={r.cell.bestFigure} /></td>
                 <td className="num">{r.cell.wins}</td>
               </tr>
             ))}
@@ -573,12 +584,15 @@ function Health({ h }: { h: HorseProfileView }) {
               <tr key={i}>
                 <td>{legs[i]}</td>
                 <td style={{ width: '50%' }}><Bar value={r} max={2} /></td>
-                <td className="num mono">{r.toFixed(2)} %</td>
+                <td className="num mono">{h.riskExact ? `${r.toFixed(2)} %` : r < 0.25 ? 'niedrig' : r < 0.45 ? 'mittel' : 'erhöht'}</td>
               </tr>
             ))}
           </tbody>
         </table>
-        <p className="small muted">Überforderung (wenig Frische, harte Bausteine, Rennen) erhöht das Risiko messbar. Schwimmen und Weide senken es.</p>
+        <p className="small muted">
+          Überforderung (wenig Frische, harte Bausteine, Rennen) erhöht das Risiko messbar. Schwimmen und Weide senken es.{' '}
+          {h.riskExact ? 'Genaue Werte von deinem Tierarzt.' : 'Ohne eigenen Tierarzt nur eine grobe Einschätzung.'}
+        </p>
       </div>
     </div>
   );
@@ -590,7 +604,10 @@ function Pedigree({ h }: { h: HorseProfileView }) {
       <h3>Abstammung</h3>
       <dl className="kv">
         <dt>Vater</dt>
-        <dd>{h.sire ?? <span className="muted">unbekannt</span>}</dd>
+        <dd>
+          {h.sire ?? <span className="muted">unbekannt</span>}
+          {h.market.sire && <span className="small muted"> · Decktaxe <Money v={h.market.sire.fee} /></span>}
+        </dd>
         <dt>Mutter</dt>
         <dd>{h.dam ?? <span className="muted">unbekannt</span>}</dd>
         <dt>Jahrgang</dt>
@@ -601,11 +618,19 @@ function Pedigree({ h }: { h: HorseProfileView }) {
         </dd>
       </dl>
       <p className="small muted" style={{ marginTop: 12 }}>
-        Zucht, Genetik und Abstammungs-Statistik folgen in Phase 4. Die Datenfelder (Vater, Mutter, Genotyp) sind bereits angelegt.
+        Die Hengste stammen aus einem generierten Register; ihre Decktaxe spiegelt die Vererbungsqualität. Zucht, Genetik und Abstammungs-Statistik folgen in Phase 4.
       </p>
       <p className="small">
         Zurück zu <HorseLink id={h.horseId} name={h.name} />.
       </p>
+    </div>
+  );
+}
+
+function NoAnalyst() {
+  return (
+    <div className="empty">
+      Ohne Datenanalyst keine Speed Figures. <Link to={{ name: 'staff' }}>Personal einstellen</Link>
     </div>
   );
 }

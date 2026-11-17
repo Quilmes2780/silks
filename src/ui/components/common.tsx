@@ -94,7 +94,7 @@ export function RunLinkValue({ runIds, label, title }: { runIds: string[]; label
                     <td className="nowrap small">{l.dateLabel}</td>
                     <td><RaceLink id={l.raceId} name={l.raceName} tab="result" /></td>
                     <td className="num">{l.position}.</td>
-                    <td className="num"><span className="fig">{l.speedFigure}</span></td>
+                    <td className="num"><Fig v={l.speedFigure} /></td>
                   </tr>
                 ))}
               </tbody>
@@ -180,4 +180,24 @@ export function useSort<T>(rows: T[] | null, initial: { key: keyof T; dir: 1 | -
 
 export function PlaceholderTag({ show }: { show: boolean }) {
   return show ? <span className="pill placeholder" title="Platzhalter-Datensatz aus der Weltdatei">Platzhalter</span> : null;
+}
+
+/** Einstufung in halben Sternen (0,5–5). */
+export function Stars({ v }: { v: number }) {
+  const full = Math.floor(v);
+  const half = v - full >= 0.5;
+  return (
+    <span className="stars" title={`${v.toFixed(1)} von 5`}>
+      {'★'.repeat(full)}
+      {half ? '½' : ''}
+      <span className="muted">{'☆'.repeat(Math.max(0, 5 - full - (half ? 1 : 0)))}</span>
+    </span>
+  );
+}
+
+/** Kurze Geldangabe (z. B. £12k, £1.2m). */
+export function shortMoney(v: number): string {
+  const a = Math.abs(v);
+  const s = a >= 1e6 ? `£${(a / 1e6).toFixed(a >= 1e7 ? 0 : 1)}m` : a >= 1e4 ? `£${Math.round(a / 1000)}k` : money(a);
+  return v < 0 ? `−${s}` : s;
 }

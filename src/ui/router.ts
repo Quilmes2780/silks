@@ -10,7 +10,12 @@ export type Route =
   | { name: 'calendar'; horseId?: string }
   | { name: 'raceday' }
   | { name: 'race'; id: string; tab?: string }
-  | { name: 'jockeys' };
+  | { name: 'jockeys' }
+  | { name: 'staff' }
+  | { name: 'market'; tab?: string }
+  | { name: 'auction'; id: string }
+  | { name: 'finance' }
+  | { name: 'facilities' };
 
 export function parseRoute(hash: string): Route {
   const parts = hash.replace(/^#\/?/, '').split('/').map(decodeURIComponent);
@@ -29,6 +34,16 @@ export function parseRoute(hash: string): Route {
       return parts[1] ? { name: 'race', id: parts[1], tab: parts[2] } : { name: 'raceday' };
     case 'jockeys':
       return { name: 'jockeys' };
+    case 'staff':
+      return { name: 'staff' };
+    case 'market':
+      return { name: 'market', tab: parts[1] || undefined };
+    case 'auction':
+      return parts[1] ? { name: 'auction', id: parts[1] } : { name: 'market' };
+    case 'finance':
+      return { name: 'finance' };
+    case 'facilities':
+      return { name: 'facilities' };
     default:
       return { name: 'saves' };
   }
@@ -42,6 +57,10 @@ export function href(r: Route): string {
       return `#/race/${encodeURIComponent(r.id)}${r.tab ? `/${r.tab}` : ''}`;
     case 'calendar':
       return `#/calendar${r.horseId ? `/${encodeURIComponent(r.horseId)}` : ''}`;
+    case 'market':
+      return `#/market${r.tab ? `/${r.tab}` : ''}`;
+    case 'auction':
+      return `#/auction/${encodeURIComponent(r.id)}`;
     default:
       return `#/${r.name}`;
   }

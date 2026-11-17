@@ -81,7 +81,7 @@ Dieses Dokument hält alle Annahmen fest, die beim Bau getroffen wurden. Bei Wid
 ## Technik
 
 - **Determinismus**: Alle Teilsysteme nutzen abgeleitete RNG-Streams (Seed + Label). Wo die Reihenfolge den Zufall beeinflusst, sortiert die Engine nach ID, denn nach dem Laden aus IndexedDB unterscheidet sich die Einfügereihenfolge. Ein Test prüft, dass ein geladener Spielstand identisch weiterläuft.
-- **Persistenz**: Kern-Zustand als ein Datensatz, Pferde, Starts, Rennen und Ausschreibungen in eigenen Tabellen (inkrementell gespeichert). Export als JSON (`format: silks-and-stamina-save`, Version 1).
+- **Persistenz**: Kern-Zustand als ein Datensatz, Pferde, Starts, Rennen und Ausschreibungen in eigenen Tabellen (inkrementell gespeichert). Export als JSON (`format: silks-and-stamina-save`, seit Phase 3 Version 2; Version-1-Stände und -Exporte werden beim Laden automatisch migriert). Geänderte Pferde und Rennen außerhalb der Wochenschleife (Kauf, Verkauf, Claims) markiert die Engine, damit der Worker sie speichert.
 - **Git-Autor** im Repo: `Quilmes2780 <Quilmes2780@users.noreply.github.com>`, damit keine private E-Mail-Adresse öffentlich im Repo landet.
 - **Schriften**: Systemschriften (keine externen Fonts), damit das Spiel offline und ohne Drittanbieter läuft.
 
@@ -92,3 +92,61 @@ Dieses Dokument hält alle Annahmen fest, die beim Bau getroffen wurden. Bei Wid
 - **Präferenzen**: Distanzoptimum log-normal um 1.600 m (1.000–3.400 m), Abschlag 1,8 % bei doppelter bzw. halber Wunschdistanz (skaliert mit der Toleranz); Bodenvorliebe −1 … +1 (bis 1,6 % Abschlag); Bahnrichtung wirkt nur in Bögen (bis 0,6 %); Laufstil ergibt sich aus Beschleunigung, Grundschnelligkeit, Ausdauer und Speedreserve.
 - **Spielerpferde** zu Beginn: Qualität ~ N(57; 3), also „mittelmäßig“ (Official Rating etwa 60–75).
 - **Schätzwerte**: Der Spieler sieht nie die echten Attribute. Die Schätzung ist echter Wert + fester Fehler (z-Wert je Pferd und Attribut) × Unsicherheit. Die Unsicherheit sinkt mit der Zahl der Starts und mit der Einsicht des Trainers.
+
+## Phase 3: Wirtschaft und Personal (freigegeben am 17.11.2026)
+
+Die sechs offenen Fragen wurden mit den Vorschlägen freigegeben:
+
+1. **Datenanalyst**: Ergebnis, Zeit, Abstände und Official Rating sind immer sichtbar. Speed Figures, Finishing Speed und Sectional Times liefert der Analyst. Ohne Analyst sind sie verborgen, bei schwachem Analysten auf 5 lb, bei mittlerem auf 2 lb gerundet; ab gutem Können (≥ 0,72) sind sie exakt. Zum Start ist ein junger Analyst angestellt (5-lb-Rundung).
+2. **Auktionen** sind rundenbasiert-interaktiv statt mit echter Uhr: Gebot (Mindestschritt oder freier Betrag), die KI antwortet sofort mit einem Schritt; Aussteigen; Auto-Gebot bis Limit. Offene Lose werden zum Wochenende mit den Auto-Geboten entschieden (englische Auktion: höchstes Limit gewinnt zum zweithöchsten plus Schritt).
+3. **Abstammung** bis Phase 4: generiertes Deckhengst-Register (40 Hengste) mit Name, Alter, Decktaxe, verborgener Vererbungsqualität, Distanz- und Bodentendenz. Neue Pferde: Qualität = ½ Hengst + ½ Stute + Streuung (sd 5). Die Hengst-Statistik (Starter, Sieger, bestes OR) entsteht aus den Nachkommen. Hengstnamen ohne weibliche Titel; alle Namen (Pferde, Mutterstuten, Hengste) bleiben eindeutig.
+4. **Pleite**: Dispokredit bis −£100.000, 9 % Jahreszins auf negative Salden. Unter dem Limit Mahnungen in Woche 1, 4 und 7, in Woche 8 verkauft die Bank das wertvollste Pferd zu 75 % des Marktwerts an den reichsten KI-Stall; danach weitere Zwangsverkäufe alle 4 Wochen, solange das Limit überschritten bleibt. Kein Game Over.
+5. **Anlage**: jetzt nur Boxen (Start 12, je Ausbau +4 für £40.000, max. 80) und drei Ausbauten: Schwimmbecken (£120.000; Schwimmen statt Weide, −5 % Verletzungsrisiko), Bergstrecke (£150.000; ohne sie wirkt Bergtraining zu 60 %), Tierklinik (£200.000; −20 % Ausfallzeit, −5 % Risiko). Ausbauten sind sofort nutzbar und kosten Unterhalt.
+6. **Teilhaberschaften und Einstellgebühren** fremder Besitzer folgen in Phase 4.
+
+### Personal
+
+- **Personal** ersetzt Trainer und Jockeys als gemeinsamer Typ (Rolle, Alter, Können, Entwicklungsgrenze, Erfahrung, Moral, Vertrag). IDs bleiben erhalten, damit Starts und Statistiken gültig bleiben.
+- **Einstufung**: Der Spieler sieht das Können als halbe Sterne (0,5–5), nicht die Rohwerte.
+- **Gehaltsforderung** je Woche = Grundgehalt der Rolle × (0,45 + 1,6 × Können²) × (1 + Erfahrung/250). Grundgehälter: Cheftrainer 600, Assistenztrainer 340, Stalljockey 380, Arbeitsreiter 220, Pfleger 200, Tierarzt 460, Hufschmied 260, Agent 340, Analyst 280 £.
+- **Zusage** deterministisch: Neue Leute sagen ab Forderung × min(1; 1,02 − Ruf/350) zu – die volle Forderung reicht immer, guter Ruf bringt Rabatt. Eigene Leute verlängern ab Forderung × (1,15 − Moral/200). Unter 80 % der Schwelle bricht die Person die Gespräche für 4 Wochen ab. Jeder Prozentpunkt Erfolgsbeteiligung über 10 % senkt die Schwelle um 3 %.
+- **Verträge** laufen bis Saisonende; ab der Vertragsrunde (Woche 44) zählt die neue Saison als erstes Vertragsjahr. Auslaufende Verträge enden zum Jahreswechsel. Abfindung bei Entlassung: halbes Restgehalt, höchstens 26 Wochen.
+- **Moral** nähert sich wöchentlich (15 %) einem Ziel aus Gehalt im Verhältnis zur Forderung, Siegen der letzten 8 Wochen, Ruf und Arbeitslast (überlastete Pfleger, Reiter, Trainer). Unter 30: 5 % Kündigungsrisiko je Woche. Gute Leute (Können > 0,58) mit Moral unter 55 werden abgeworben. Abgang jeweils mit zwei Wochen Frist; eine Gehaltserhöhung um 15 % oder die volle Forderung hält sie.
+- **Entwicklung**: Können wächst Richtung Entwicklungsgrenze (schneller mit Erfahrung, bei Anstellung doppelt so schnell), bis 32 (Jockeys) bzw. 45 Jahre. Ruhestand ab 44 (Jockeys) bzw. 64 Jahren.
+- **Wirkung** (normiert: Personal mittlerer Qualität 0,5 = Kalibrierung aus Phase 2):
+  - Cheftrainer: Trainingseffizienz und Einsicht wie bisher; Spezialisten +8 % für Sprinter bzw. Steher.
+  - Assistenztrainer: Der Cheftrainer schafft 20 Pferde, jeder Assistent +20; darüber sinkt die Effizienz (Wurzel des Verhältnisses, mindestens 60 %).
+  - Arbeitsreiter: Faktor 0,85 + 0,3 × Können, 8 Pferde je Reiter; ohne Reiter 70 %.
+  - Pfleger: 4 Pferde je Pfleger, Erholung +6 × (Können × Bindung − 0,3) Frische je Woche, Temperament wächst leicht. Ohne Pfleger −3 Frische je Woche und leichter Temperamentsverlust. Bindung wächst um 2 je Woche; ein Wechsel setzt sie zurück. Bei Gruppensiegen wird der Pfleger in der Siegerehrung erwähnt.
+  - Tierarzt: Risiko × (1 − 0,2 × (Können − 0,5) − 0,02), Ausfallzeit × (1 − 0,3 × (Können − 0,5)); ohne Tierarzt +8 % Risiko, +10 % Ausfallzeit, höhere Behandlungskosten und nur grobe Risikoangaben.
+  - Hufschmied: Risiko × (1 − 0,2 × (Können − 0,5) − 0,02); ohne +8 %.
+  - Bloodstock-Agent: Gutachten zu Auktionslosen mit Streuung 1,5 + 6 × (1 − Können) Attributpunkte.
+  - Datenanalyst: siehe Frage 1.
+  - KI-Ställe modellieren nur Cheftrainer und Stalljockeys einzeln, den Rest über eine Personalqualität (0,25–0,85).
+- **Jockeys**: Freie Jockeys reiten gegen £160 Reitgebühr und 8 % des Preisgelds. Stalljockeys (Vertrag) reiten die eigenen Pferde zuerst, ohne Reitgebühr, mit vertraglicher Beteiligung (Standard 10 %). Die 8 stärksten KI-Ställe binden zum Start die besten Jockeys. Nachwuchsjockeys (bis 26 Jahre) erhalten 7/5/3 lb Erlaubnis bei unter 20/50/95 Siegen – nicht in Group- und Listed-Rennen. Das getragene Gewicht ist mindestens das Reitgewicht des Jockeys (108–120 lb). Sperren: je Ritt 0,4 % + 1,2 % × (1 − Taktik) (+0,3 % bei frühem Angriff), 1–3 Wochen.
+- **Trainer-Beteiligung**: Der Cheftrainer erhält seine vertragliche Erfolgsbeteiligung (Standard 10 %) am Preisgeld, auch bei der KI.
+
+### Finanzen
+
+- **Kosten**: Unterhalt £110 je Pferd und Woche, Gehälter, Anlagenunterhalt (£12 je Box plus Ausbauten), Tierarzt je Verletzung (Husten £300 bis Sehnenschaden £4.000, mit eigenem Tierarzt und Klinik deutlich weniger), Nenn- und Reitgebühren, Erfolgsbeteiligungen, Zinsen. Die Trainingspauschale aus Phase 2 entfällt.
+- **Kostenrechnung je Pferd**: direkte Kosten plus gleichmäßig verteilte Gemeinkosten (Gehälter, Anlage). Bilanz = Preisgeld + Verkauf + Marktwert − Kaufpreis (bzw. Marktwert bei Übernahme) − laufende Kosten; ROI = Bilanz ÷ eingesetztes Kapital. Konten verkaufter Pferde bleiben erhalten.
+- **Ruf** (0–100) aus Preisgeld und Gruppensiegen der letzten 52 Wochen, geglättet. Er senkt Gehaltsforderungen beim Einstellen und hebt die Moral.
+- **Startkapital** £250.000 (statt £150.000): Die Kalibrierung zeigt, dass ein mittelmäßiger Stall, den die KI-Logik verwaltet (Autopilot), mit den schwachen Startpferden etwa £70.000–80.000 pro Saison verliert. Mit Startkapital und Dispo bleiben rund vier bis fünf Saisons, um über Käufe, Verkäufe, Claims und besseres Personal profitabel zu werden – das ist die gewünschte Entscheidungslage („Geld erzwingt Entscheidungen“).
+- **KI-Wirtschaft**: KI-Ställe zahlen Unterhalt, Gehälter (modelliertes Personal plus £150 je Pferd für den Rest), Gebühren und Käufe; sie erhalten Preisgeld und Verkaufserlöse. Fällt ein KI-Konto unter £150.000, schießen die Besitzer £250.000 nach (Mäzene, wie im echten Rennsport). Kalibrierung über 3 Saisons: 6 Nachschüsse insgesamt, KI-Kontostände P10/P50/P90 etwa £0,25 Mio./£1,5 Mio./£6 Mio.
+
+### Markt
+
+- **Marktwert**: 9.000 £ × e^((Niveau − 55)/11), Niveau = Official Rating (gemischt mit jüngeren Figures, wenn besser), ohne OR Mittel aus besten und letzten Figures, ohne Rennen Abstammung (aus der Decktaxe) und Exterieur. Altersfaktoren 2j 1,05, 3j 1,0, 4j 0,7, 5j 0,5, 6j 0,38, 7j+ 0,3; Wallache ab 3 × 0,75; Hengste ab Niveau 100 bis 4 Jahre Deckhengst-Aufschlag; Stuten ab 95 × 1,2; verletzt × 0,85 (Sehne × 0,45); Minimum £1.500. Ergebnis (3–4-Jährige): OR 55–69 ≈ £15.000, 70–84 ≈ £47.000, 85–99 ≈ £185.000, 100–114 ≈ £780.000.
+- **Exterieur** ist ein öffentlicher, verrauschter Eindruck vom körperlichen Potenzial (Streuung 6 Punkte).
+- **Transfermarkt**: Die KI verkauft ab ihrer Mindestforderung: gelistete Pferde ab 93 % des geforderten Preises, sonst Marktwert × 1,3 (Top-8 des Stalls × 1,5, Top-3 × 2). Ab 80 % der Forderung gibt es ein Gegenangebot (höchstens drei Runden), darunter eine Absage; nach zwei Absagen 8 Wochen Funkstille. KI-Ställe listen schwächere ältere Pferde und Überzählige alle 4 Wochen (Preis ≈ 115 % des Werts) und machen Angebote für Spielerpferde (2 % je Woche und Pferd, auf der Verkaufsliste deutlich mehr; Kauf zum geforderten Preis, wenn er unter ihrem Limit liegt). Angebote gelten 2 Wochen; ein Gegenangebot über dem verborgenen Limit beendet die Verhandlung.
+- **Auktionen**: Breeze-up in Woche 15 (30 Zweijährige mit Breeze-Zeit über 2 Furlongs), Jährlinge in Woche 40 (80 Lose), Horses in Training in Woche 46 (Abgaben der KI-Ställe plus eingelieferte Spielerpferde). Katalog 3 Wochen vorher, Mindestpreis 45 % des Katalogwerts (Horses in Training 60 %). Bis zu 5 KI-Bieter je Los mit eigenem Gutachten; Verkäufer zahlen 5 % Provision. Unverkaufte Züchterware verschwindet vom Markt. Rangkorrelation Preis ~ verborgene Qualität: 0,86–0,96 bei Breeze-up und Jährlingen.
+- **Claiming-Rennen**: neue Rennart (Class 5, 3yo+, 5f–1m2f, Preisgeld £5.000, Claiming-Preis £5.000/8.000/12.000/16.000). Die KI nennt nur Pferde, deren Marktwert höchstens 125 % des Claiming-Preises beträgt, und claimt, wenn ihr eigenes Gutachten den Wert auf mindestens 130 % schätzt. Claims in der Rennwoche nach Bekanntgabe der Starter; bei mehreren Claims entscheidet das Los. Das Preisgeld gehört noch dem alten Besitzer. Etwa 30–40 Claims pro Saison.
+- **Neue Zweijährige** aus der „Zucht des Besitzers“ kommen weiter jedes Jahr (Spieler: bis zu 2, nur bei freien Boxen), jetzt mit Abstammung aus dem Hengst-Register. Echte Zucht folgt in Phase 4.
+
+### Migration
+
+- Version-1-Stände: Trainer → Cheftrainer mit Vertrag, Jockeys → freie Jockeys (Siege aus der Startliste + 150), die 8 KI-Ställe mit dem höchsten Ruf binden Stalljockeys, Startteam des Spielers wird eingestellt, Hengst-Register und Abstammungen ergänzt, Kontoauszug „Training“ → „Unterhalt“. Der laufende Kalender bleibt erhalten; Claiming-Rennen gibt es ab der nächsten Saison. Ein fehlender Auktionskatalog wird nachgeholt, solange die Auktion noch bevorsteht.
+
+### Leistung
+
+- Saisonsimulation mit Wirtschaft (Seed 20261117): Ø 97 ms je Woche, max. 0,3 s; die erste Woche nach dem Laden ist langsamer, weil die Standardzeiten der Speed Figures erst berechnet werden.

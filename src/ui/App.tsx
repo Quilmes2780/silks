@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { call, invalidate, toast, useQuery } from './api';
 import { href, navigate, useRoute, type Route } from './router';
-import { HorseLink, Modal, Money, RaceLink, SilksIcon, Toasts } from './components/common';
+import { Fig, HorseLink, Modal, Money, RaceLink, SilksIcon, Toasts } from './components/common';
 import { SavesScreen } from './screens/Saves';
 import { OfficeScreen } from './screens/Office';
 import { StableScreen } from './screens/Stable';
@@ -10,6 +10,11 @@ import { CalendarScreen } from './screens/Calendar';
 import { RaceDayScreen } from './screens/RaceDay';
 import { RaceScreen } from './screens/Race';
 import { JockeysScreen } from './screens/Jockeys';
+import { StaffScreen } from './screens/Staff';
+import { MarketScreen } from './screens/Market';
+import { AuctionScreen } from './screens/Auction';
+import { FinanceScreen } from './screens/Finance';
+import { FacilitiesScreen } from './screens/Facilities';
 import type { WeekSummary } from '../engine/game/state';
 import type { RunLink } from '../engine/game/queries';
 
@@ -83,6 +88,16 @@ function Screen({ route }: { route: Route }) {
       return <RaceScreen id={route.id} tab={route.tab} />;
     case 'jockeys':
       return <JockeysScreen />;
+    case 'staff':
+      return <StaffScreen />;
+    case 'market':
+      return <MarketScreen tab={route.tab} />;
+    case 'auction':
+      return <AuctionScreen id={route.id} />;
+    case 'finance':
+      return <FinanceScreen />;
+    case 'facilities':
+      return <FacilitiesScreen />;
     default:
       return <OfficeScreen />;
   }
@@ -91,7 +106,8 @@ function Screen({ route }: { route: Route }) {
 function Sidebar({ route }: { route: Route }) {
   const { data: h } = useQuery('header', undefined);
   const item = (r: Route, label: string, extra?: React.ReactNode) => {
-    const active = route.name === r.name || (r.name === 'stable' && route.name === 'horse') || (r.name === 'raceday' && route.name === 'race');
+    const active =
+      route.name === r.name || (r.name === 'stable' && route.name === 'horse') || (r.name === 'raceday' && route.name === 'race') || (r.name === 'market' && route.name === 'auction');
     return (
       <a href={href(r)} className={active ? 'active' : ''}>
         {label}
@@ -110,12 +126,16 @@ function Sidebar({ route }: { route: Route }) {
         {item({ name: 'stable' }, 'Stall')}
         {item({ name: 'calendar' }, 'Rennkalender')}
         {item({ name: 'raceday' }, 'Renntag', h && h.runnersThisWeek > 0 ? <span className="badge">{h.runnersThisWeek}</span> : null)}
+        {item({ name: 'market' }, 'Markt', h && h.marketAlerts > 0 ? <span className="badge">{h.marketAlerts}</span> : null)}
+        {item({ name: 'staff' }, 'Personal', h && h.staffAlerts > 0 ? <span className="badge">{h.staffAlerts}</span> : null)}
         {item({ name: 'jockeys' }, 'Jockeys')}
+        {item({ name: 'finance' }, 'Finanzen')}
+        {item({ name: 'facilities' }, 'Anlage')}
         <div className="sep" />
         {item({ name: 'saves' }, 'Spielstände')}
       </nav>
       <div className="foot">
-        Phase 1–2 · Zucht, Auktionen und Personal folgen.
+        Phase 3 · Zucht und Generationen folgen in Phase 4.
         <br />
         Zufall: {h ? Math.round(h.randomness * 100) : '–'} %
       </div>
@@ -158,8 +178,8 @@ function TopBar() {
       )}
       <div className="spacer" />
       {h && (
-        <div className="balance" title="Kontostand">
-          <Money v={h.balance} />
+        <div className={`balance ${h.balance < 0 ? 'neg' : ''}`} title={h.balance < -h.overdraftLimit ? 'Dispolimit überschritten!' : 'Kontostand'}>
+          <a href="#/finance" style={{ color: 'inherit' }}><Money v={h.balance} /></a>
         </div>
       )}
       <button className="btn brass" onClick={advance} disabled={busy} title="Strg+Enter">
@@ -173,6 +193,12 @@ function TopBar() {
           <p className="muted">
             {summary.s.racesRun} Rennen mit {summary.s.runners} Startern gelaufen · {summary.s.injuries} neue Verletzungen · Simulation {Math.round(summary.s.durationMs)} ms
           </p>
+          <p>
+            Kontostand diese Woche: <Money v={summary.s.balanceDelta} signed />
+            {summary.s.events.map((e) => (
+              <span key={e} className="pill bad" style={{ marginLeft: 8 }}>{e}</span>
+            ))}
+          </p>
           {summary.links.length > 0 ? (
             <>
               <h3>Deine Starter</h3>
@@ -183,7 +209,7 @@ function TopBar() {
                       <td><HorseLink id={l.horseId} name={l.horseName} /></td>
                       <td><RaceLink id={l.raceId} name={l.raceName} /></td>
                       <td className="num"><b>{l.position}.</b></td>
-                      <td className="num">SF <span className="fig">{l.speedFigure}</span></td>
+                      <td className="num">SF <Fig v={l.speedFigure} /></td>
                       <td>
                         <a className="btn small" href={href({ name: 'race', id: l.raceId, tab: 'view' })} onClick={() => setSummary(null)}>
                           Rennen ansehen

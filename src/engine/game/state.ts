@@ -168,11 +168,11 @@ export function touchRace(g: GameState, raceId: string): void {
 }
 
 export function horsesOfStable(g: GameState, stableId: string): Horse[] {
-  return sortedById(Object.values(g.horses)).filter((h) => h.stableId === stableId && h.status === 'active');
+  return sortedById(Object.values(g.horses).filter((h) => h.stableId === stableId && h.status === 'active'));
 }
 
 export function staffOfStable(g: GameState, stableId: string, role?: Staff['role']): Staff[] {
-  return sortedById(Object.values(g.staff)).filter((s) => s.contract?.stableId === stableId && (!role || s.role === role));
+  return sortedById(Object.values(g.staff).filter((s) => s.contract?.stableId === stableId && (!role || s.role === role)));
 }
 
 export function isAiStable(s: Stable): boolean {
@@ -189,6 +189,17 @@ export function runsOfHorse(g: GameState, h: Horse): Run[] {
  */
 export function sortedById<T extends { id: string }>(items: Iterable<T>): T[] {
   return [...items].sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+}
+
+/** Alle vergebenen Pferdenamen (Pferde, Mutterstuten, Deckhengste) – Weatherbys: keine Duplikate. */
+export function usedHorseNames(g: GameState): string[] {
+  const out: string[] = [];
+  for (const h of Object.values(g.horses)) {
+    out.push(h.name);
+    if (h.damName) out.push(h.damName);
+  }
+  for (const s of Object.values(g.stallions)) out.push(s.name);
+  return out;
 }
 
 export function formatMoney(x: number): string {

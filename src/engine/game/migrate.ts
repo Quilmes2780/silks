@@ -6,8 +6,9 @@ import { generateStaff, refreshStaffPool, salaryDemand, signContract } from '../
 import { assignPedigree, generateStallions } from '../economy/stallions';
 import { recordBalance } from '../economy/finance';
 import { updateValues } from '../economy/value';
+import { auctionWeek } from '../market/auction';
 import { aiFacilities, hireStarterTeam, marketStable, PLAYER_FACILITIES } from './newGame';
-import { addInbox, DEFAULT_CONFIG, type GameState, horseAccount, MARKET_STABLE_ID, sortedById, weekIndexOf } from './state';
+import { addInbox, DEFAULT_CONFIG, type GameState, horseAccount, MARKET_STABLE_ID, sortedById, usedHorseNames, weekIndexOf } from './state';
 
 /**
  * Spielstände aus Phase 2 (Version 1) auf Version 2 heben:
@@ -140,7 +141,7 @@ function migrateV1(raw: Record<string, unknown>): void {
   }
 
   // Register, Pool, Startteam
-  const names = new NameRegistry(Object.values(g.horses).map((h) => h.name));
+  const names = new NameRegistry(usedHorseNames(g));
   generateStallions(g, r.fork('stallions'), names);
   for (const h of sortedById(Object.values(g.horses))) if (!h.sireName) assignPedigree(g, h, r.fork('ped', h.id), names);
   const people = new PersonNameRegistry(Object.values(g.staff).map((s) => s.name));
@@ -150,8 +151,21 @@ function migrateV1(raw: Record<string, unknown>): void {
   mine.slice(0, 4).forEach((h) => (h.groomId = groom.id));
   for (const h of mine) horseAccount(g, h.id);
   refreshStaffPool(g, r.fork('pool'), true);
+  // Die stärksten KI-Ställe binden die besten freien Jockeys
+  const top = sortedById(Object.values(g.stables))
+    .filter((s) => s.kind === 'ai')
+    .sort((a, b) => b.reputation - a.reputation)
+    .slice(0, 8);
+  const bestJockeys = sortedById(Object.values(g.staff))
+    .filter((s) => s.role === 'jockey' && !s.contract)
+    .sort((a, b) => (b.jockey!.tactics + b.jockey!.pace + b.jockey!.finishing) - (a.jockey!.tactics + a.jockey!.pace + a.jockey!.finishing));
+  top.forEach((st, i) => {
+    const j = bestJockeys[i];
+    if (j) signContract(g, j, st.id, { weeklySalary: salaryDemand(j), years: 1 + (i % 3) });
+  });
   updateValues(g);
   recordBalance(g, g.weekIndex - 1);
+  auctionWeek(g);
   addInbox(g, {
     kind: 'info',
     title: 'Neu: Wirtschaft und Personal',

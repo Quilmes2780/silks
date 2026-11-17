@@ -31,6 +31,7 @@ export function RaceScreen({ id, tab }: { id: string; tab?: string }) {
           {r.dateLabel} · {r.trackName} ({r.direction}, {r.surface === 'aw' ? 'Allwetter' : 'Rasen'}) · {r.distance} ({r.distanceM} m) · {r.conditions} ·
           Boden: {r.going ?? 'wird am Renntag bekannt gegeben'} · Preisgeld <Money v={r.prize} />
           {r.winningTime !== null && <> · Siegerzeit <Time s={r.winningTime} /></>}
+          {r.claimPrice !== null && <> · Claiming-Preis <b><Money v={r.claimPrice} /></b></>}
         </div>
       </div>
       <div className="tabs">
@@ -43,8 +44,8 @@ export function RaceScreen({ id, tab }: { id: string; tab?: string }) {
       {active === 'card' && <Card r={r} />}
       {active === 'view' && ran && <RaceView raceId={r.raceId} />}
       {active === 'result' && ran && <Result r={r} />}
-      {active === 'sectionals' && ran && <Sectionals r={r} />}
-      {active === 'speed' && ran && <SpeedCurves r={r} />}
+      {active === 'sectionals' && ran && (hasSectionals(r) ? <Sectionals r={r} /> : <NoAnalystCard />)}
+      {active === 'speed' && ran && (hasSectionals(r) ? <SpeedCurves r={r} /> : <NoAnalystCard />)}
     </div>
   );
 }
@@ -87,6 +88,7 @@ function Card({ r }: { r: RaceCardView }) {
               <th>letzte Speed Figures</th>
               <th className="num">beste</th>
               <th className="num">Quote</th>
+              {r.claimOpen && <th>Claim</th>}
             </tr>
           </thead>
           <tbody>
@@ -100,7 +102,10 @@ function Card({ r }: { r: RaceCardView }) {
                 </td>
                 <td className="num">{x.age}</td>
                 <td className="num mono">{x.weight ?? '–'}</td>
-                <td className="small">{x.jockeyName}</td>
+                <td className="small">
+                  {x.jockeyName}
+                  {x.allowance > 0 && <span className="muted"> ({x.allowance})</span>}
+                </td>
                 <td className="num">{x.officialRating ?? '–'}</td>
                 <td className="mono">{x.form}</td>
                 <td>
@@ -115,6 +120,9 @@ function Card({ r }: { r: RaceCardView }) {
                 </td>
                 <td className="num"><Fig v={x.bestFigure?.value} runId={x.bestFigure?.runId} /></td>
                 <td className="num mono">{x.odds}</td>
+                {r.claimOpen && (
+                  <td>{x.isPlayer ? <span className="small muted">eigenes</span> : <ClaimButton r={r} x={x} />}</td>
+                )}
               </tr>
             ))}
           </tbody>
@@ -182,8 +190,11 @@ function Orders({ r, runner }: { r: RaceCardView; runner: CardRunner }) {
         <select value={runner.jockeyId ?? ''} disabled={busy} onChange={(e) => set({}, e.target.value || null)}>
           {!runner.jockeyId && <option value="">automatisch buchen</option>}
           {jockeys?.map((j) => (
-            <option key={j.id} value={j.id} disabled={taken.has(j.id)}>
-              {j.name} ({j.rating.toFixed(1)}/10, {j.wins} Siege){taken.has(j.id) ? ' – reitet anderes Pferd' : ''}
+            <option key={j.id} value={j.id} disabled={taken.has(j.id) || j.suspendedUntilWeek !== null || (!!j.stable && !j.stable.isPlayer)}>
+              {j.name} ({j.rating.toFixed(1)}★, {j.weight}{j.allowance ? `, −${j.allowance} lb` : ''}, {j.wins} Siege)
+              {taken.has(j.id) ? ' – reitet anderes Pferd' : ''}
+              {j.suspendedUntilWeek !== null ? ' – gesperrt' : ''}
+              {j.stable && !j.stable.isPlayer ? ` – Stalljockey ${j.stable.name}` : j.stable?.isPlayer ? ' – dein Stalljockey' : ''}
             </option>
           ))}
         </select>
@@ -236,7 +247,10 @@ function Result({ r }: { r: RaceCardView }) {
               <td className="num mono">{(x.topSpeed * 3.6).toFixed(1)} km/h</td>
               <td className="num mono">{Math.round(x.distanceRunM)}</td>
               <td className="num">{x.prize ? <Money v={x.prize} /> : ''}</td>
-              <td className="small muted">{x.events.map((e) => EVENT_LABEL[e.type]).join(', ')}</td>
+              <td className="small muted">
+                {x.events.map((e) => EVENT_LABEL[e.type]).join(', ')}
+                {x.claimedBy && <span className="pill warn" style={{ marginLeft: 4 }}>geclaimt von {x.claimedBy.isPlayer ? 'dir' : x.claimedBy.name}</span>}
+              </td>
             </tr>
           ))}
         </tbody>
@@ -360,5 +374,34 @@ function SpeedCurves({ r }: { r: RaceCardView }) {
       <Chart option={option} height={400} />
       <p className="small muted">Einbrechende Frontläufer und aufkommende Schlussläufer sieht man am Verlauf der letzten 400 m.</p>
     </div>
+  );
+}
+
+function hasSectionals(r: RaceCardView): boolean {
+  return (r.result?.[0]?.sectionals.length ?? 0) > 0;
+}
+
+function NoAnalystCard() {
+  return (
+    <div className="card empty">
+      Sectional Times und Tempokurven liefert dein Datenanalyst. <Link to={{ name: 'staff' }}>Personal einstellen</Link>
+    </div>
+  );
+}
+
+function ClaimButton({ r, x }: { r: RaceCardView; x: CardRunner }) {
+  const { run, busy } = useCommand();
+  return (
+    <span className="row" style={{ gap: 4 }}>
+      <button
+        className={`btn small ${x.claimedByMe ? 'brass' : ''}`}
+        disabled={busy}
+        title={`Marktwert ${x.value !== null ? '£' + x.value.toLocaleString('en-GB') : '–'}`}
+        onClick={() => run('claimHorse', { raceId: r.raceId, horseId: x.horseId })}
+      >
+        {x.claimedByMe ? 'Claim zurückziehen' : 'claimen'}
+      </button>
+      {x.value !== null && <span className="small muted">Wert {Math.round(x.value / 1000)}k</span>}
+    </span>
   );
 }

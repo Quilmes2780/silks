@@ -21,13 +21,25 @@ export function publicSireQuality(s: Stallion): number {
   return 55 + 6 * Math.log(s.fee / FEE_BASE);
 }
 
+/** Hengstnamen ohne weibliche Titel. */
+function stallionName(r: Rng, names: NameRegistry): string {
+  for (let i = 0; i < 50; i++) {
+    const n = names.horseName(r);
+    if (FEMALE_TITLE.test(n)) continue;
+    return n;
+  }
+  return names.horseName(r);
+}
+
+const FEMALE_TITLE = /^(Lady|Queen|Miss|Princess|Duchess|Madame|Mrs|Dame|Countess|Mistress)(\s|$)/;
+
 export function generateStallions(g: GameState, r: Rng, names: NameRegistry, n = 40): void {
   for (let i = 0; i < n; i++) {
     const quality = Math.round(Math.max(45, Math.min(84, r.normal(62, 6.5))) * 10) / 10;
     const id = `st${Object.keys(g.stallions).length + 1}`;
     g.stallions[id] = {
       id,
-      name: names.horseName(r),
+      name: stallionName(r, names),
       foalYear: g.season - r.int(5, 19),
       fee: feeForQuality(quality),
       quality,

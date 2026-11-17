@@ -135,7 +135,9 @@ export function financeWeek(g: GameState, playerSalaries: number, sellHorse: (ho
       });
     }
     if (w >= 8) {
-      const horses = horsesOfStable(g, p.id).sort((a, b) => marketValue(g, b) - marketValue(g, a));
+      const horses = horsesOfStable(g, p.id)
+        .filter((x) => !x.boarding)
+        .sort((a, b) => marketValue(g, b) - marketValue(g, a));
       const h = horses[0];
       const buyers = sortedById(Object.values(g.stables)).filter((s) => s.kind === 'ai').sort((a, b) => b.balance - a.balance);
       if (h && buyers[0]) {

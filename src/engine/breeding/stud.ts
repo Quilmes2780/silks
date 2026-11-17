@@ -6,7 +6,7 @@ import { ATTR_KEYS } from '../types';
 import { clampOr } from '../stats/rating';
 import type { NameRegistry } from '../world/names';
 import { type GameState, horsesWithStatus, invalidateHorseIndex, MARKET_STABLE_ID, sortedById, touch } from '../game/state';
-import { conceive, dropLoci, ensureGenotype, express, LINE_COUNT, traitsOf, type Conception } from './genetics';
+import { conceive, dropLoci, ensureGenotype, express, LINE_COUNT, traitsOf, TRAITS, type Conception } from './genetics';
 
 /**
  * Gestüt: Deckhengste und Zuchtstuten als echte Pferde, Decktaxen, Plätze und Kosten,
@@ -193,10 +193,15 @@ export function pickFounderSire(g: GameState, r: Rng, targetQ: number, foalYear:
   );
 }
 
+/** Mittlere Klasse der Gründerhengste */
+const FOUNDER_SIRE_MEAN = 71;
+
 /** Abstammung für ein Gründertier: Vater aus dem Register, Mutter nur mit Namen. */
 export function assignPedigree(g: GameState, h: Horse, r: Rng, names: NameRegistry): void {
+  // Nur schwacher Zusammenhang zur eigenen Klasse – passend zur Erblichkeit der Genetik
+  // (Nachkommen liegen im Mittel h²/2 der Vaterabweichung über dem Schnitt)
   const q = traitsOf(h).class;
-  const sire = pickFounderSire(g, r, q + r.normal(0, 4), h.foalYear);
+  const sire = pickFounderSire(g, r, FOUNDER_SIRE_MEAN + 0.15 * (q - TRAITS.class.mu) + r.normal(0, 4), h.foalYear);
   if (sire) {
     h.sireId = sire.id;
     h.sireName = sire.name;
@@ -236,7 +241,11 @@ export function createFounderStallions(g: GameState, r: Rng, names: NameRegistry
   invalidateHorseIndex(g);
 }
 
-const FEMALE_TITLE = /^(Lady|Queen|Miss|Princess|Duchess|Madame|Mrs|Dame|Countess|Mistress)(\s|$)/;
+const FEMALE_TITLE = /(^|\s)(Lady|Queen|Miss|Princess|Duchess|Madame|Mrs|Dame|Countess|Mistress|Lass|Lassie|Girl|Belle|Maid|Maiden|Bride|Sister|Mother|Empress|Heiress|Diva|Damsel|Wife|Widow|Duchesse|Contessa|Senorita|Mademoiselle)(\s|$)/;
+
+export function isFemaleTitle(name: string): boolean {
+  return FEMALE_TITLE.test(name);
+}
 
 export function stallionName(r: Rng, names: NameRegistry): string {
   for (let i = 0; i < 50; i++) {

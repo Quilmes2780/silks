@@ -36,6 +36,7 @@ export function canEnter(g: GameState, raceId: string, horseId: string): { ok: b
   if (clash) return { ok: false, reason: `In derselben Woche bereits für „${g.templates[clash.templateId]!.name}“ genannt.` };
   const el = checkEligibility(h, t, race.season);
   if (!el.ok) return { ok: false, reason: el.reason };
+  if (h.boarding && t.claimPrice !== null) return { ok: false, reason: 'Einstellpferde dürfen nicht in Claiming-Rennen laufen.' };
   return { ok: true };
 }
 
@@ -46,7 +47,8 @@ export function enterRace(g: GameState, raceId: string, horseId: string, jockeyI
   const race = g.races[raceId]!;
   const t = g.templates[race.templateId]!;
   race.entries.push({ horseId, stableId: g.playerStableId, enteredWeekIndex: g.weekIndex, jockeyId, tactic: { ...tactic } });
-  addLedger(g, { amount: -t.entryFee, kind: 'entry_fee', text: `Nenngebühr ${t.name} (${h.name})`, raceId, horseId });
+  // Einstellpferde: Nenngebühr zahlt der Besitzer
+  if (!h.boarding) addLedger(g, { amount: -t.entryFee, kind: 'entry_fee', text: `Nenngebühr ${t.name} (${h.name})`, raceId, horseId });
 }
 
 export function withdrawEntry(g: GameState, raceId: string, horseId: string): void {

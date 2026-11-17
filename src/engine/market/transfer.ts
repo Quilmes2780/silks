@@ -1,3 +1,4 @@
+import { settlePartnersOnSale } from './partnership';
 import { Rng } from '../rng';
 import type { Horse, PurchaseVia, TransferOffer } from '../types';
 import { DEFAULT_TRAINING } from '../horse/generate';
@@ -75,6 +76,7 @@ export function transferHorse(g: GameState, horseId: string, toStableId: string,
     const acc = horseAccount(g, horseId);
     acc.toWeekIndex = g.weekIndex;
   }
+  settlePartnersOnSale(g, h, from, net);
   scratchFutureEntries(g, horseId);
   delete g.breeding.plans[horseId];
   for (const o of g.offers) if (o.horseId === horseId && (o.status === 'open' || o.status === 'countered')) o.status = 'withdrawn';
@@ -209,6 +211,7 @@ export function respondOffer(g: GameState, offerId: string, action: 'accept' | '
 export function listForSale(g: GameState, horseId: string, askingPrice: number | null): void {
   const h = g.horses[horseId];
   if (!h || h.stableId !== g.playerStableId || h.status !== 'active') throw new MarketError('Das Pferd gehört nicht zu deinem Stall.');
+  if (h.boarding) throw new MarketError('Einstellpferde gehören ihrem Besitzer und können nicht verkauft werden.');
   h.forSale = askingPrice && askingPrice > 0 ? { askingPrice: Math.round(askingPrice), sinceWeekIndex: g.weekIndex } : null;
   touch(g, horseId);
 }
@@ -232,6 +235,7 @@ export function marketWeek(g: GameState): void {
   g.offers = g.offers.filter((o) => o.status === 'open' || o.status === 'countered' || o.createdWeekIndex >= g.weekIndex - 26);
 
   for (const h of horsesOfStable(g, g.playerStableId)) {
+    if (h.boarding) continue;
     const v = marketValue(g, h);
     if (v < 1500) continue;
     if (g.offers.some((o) => o.horseId === h.id && o.sellerId === g.playerStableId && (o.status === 'open' || o.status === 'countered'))) continue;

@@ -9,6 +9,10 @@ import * as auction from '../engine/market/auction';
 import { toggleClaim } from '../engine/market/claiming';
 import { migrateGame } from '../engine/game/migrate';
 import { compactOldRecords } from '../engine/game/archive';
+import * as breedCmd from '../engine/breeding/commands';
+import * as bq from '../engine/breeding/queries';
+import * as partnership from '../engine/market/partnership';
+import * as boarding from '../engine/market/boarding';
 import type { GameState } from '../engine/game/state';
 import { bundledWorld } from '../engine/world/bundled';
 import type { Api, ApiType } from './protocol';
@@ -176,6 +180,19 @@ export class GameService {
     withdrawLot: (p) => this.run((g) => (auction.withdrawLot(g, p.horseId, p.auctionId), null)),
     claimHorse: (p) => this.run((g) => ({ claimed: toggleClaim(g, p.raceId, p.horseId) }), { races: [p.raceId] }),
 
+    // Zucht
+    setMating: (p) => this.run((g) => (breedCmd.setMating(g, p.mareId, p.stallionId), { planned: p.stallionId !== null })),
+    toBroodmare: (p) => this.run((g) => (breedCmd.toBroodmare(g, p.horseId), null), { horses: [p.horseId] }),
+    standAsStallion: (p) => this.run((g) => (breedCmd.standAsStallion(g, p.horseId), null), { horses: [p.horseId] }),
+    bringIntoTraining: (p) => this.run((g) => (breedCmd.bringIntoTraining(g, p.horseId), null), { horses: [p.horseId] }),
+    retireHorse: (p) => this.run((g) => (breedCmd.retireHorse(g, p.horseId), null), { horses: [p.horseId] }),
+    sellToBreeders: (p) => this.run((g) => ({ price: breedCmd.sellToBreeders(g, p.horseId) }), { horses: [p.horseId] }),
+    buyShare: (p) => this.run((g) => ({ price: partnership.buyShare(g, p.horseId, p.share) }), { horses: [p.horseId] }),
+    sellShare: (p) => this.run((g) => ({ price: partnership.sellShare(g, p.horseId) }), { horses: [p.horseId] }),
+    acceptBoarding: (p) => this.run((g) => (boarding.acceptBoarding(g, p.offerId), null)),
+    declineBoarding: (p) => this.run((g) => (boarding.declineBoarding(g, p.offerId), null)),
+    endBoarding: (p) => this.run((g) => (boarding.endBoarding(g, p.horseId, 'player'), null), { horses: [p.horseId] }),
+
     // Abfragen
     header: () => q.headerView(this.g),
     office: () => q.applyAnalyst(this.g, q.officeView(this.g)),
@@ -193,6 +210,11 @@ export class GameService {
     facilities: () => eq.facilitiesView(this.g),
     market: () => q.applyAnalyst(this.g, eq.marketView(this.g)),
     auction: (p) => eq.auctionView(this.g, p.auctionId),
+    stud: () => bq.studView(this.g),
+    stallions: (p) => bq.stallionList(this.g, p?.mareId ?? null),
+    pedigree: (p) => bq.pedigreeView(this.g, p.horseId),
+    breedingStats: () => bq.breedingStatsView(this.g),
+    partnerships: () => bq.partnershipsView(this.g),
   };
 
   private ownHorses(): string[] {

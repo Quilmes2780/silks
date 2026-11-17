@@ -150,3 +150,60 @@ Die sechs offenen Fragen wurden mit den Vorschlägen freigegeben:
 ### Leistung
 
 - Saisonsimulation mit Wirtschaft (Seed 20261117): Ø 97 ms je Woche, max. 0,3 s; die erste Woche nach dem Laden ist langsamer, weil die Standardzeiten der Speed Figures erst berechnet werden.
+
+## Phase 4: Zucht und Generationen (freigegeben am 17.11.2026)
+
+Freigegeben wurde der Plan mit acht Punkten: Genetik, Hengste als Pferde, Gestüt, Jahreszyklus der Zucht, KI-Zucht und Population, Statistik und Oberfläche, Teilhaberschaften und Einstellpferde, Prüfung über 10 Saisons.
+
+### Genetik
+
+- **Merkmale**: 11 erbliche Merkmale mit je 6 Gen-Paaren (additive Allele): *Klasse* (gemeinsamer Anteil von Grundschnelligkeit, Beschleunigung, Ausdauer und Speedreserve), *Distanz* (log2 des Distanzoptimums), *Boden*, je eine Abweichung der vier Leistungsattribute von der Klasse sowie Kampfgeist, Wendigkeit, Temperament und Konstanz direkt. Fohlen erben je Locus ein zufälliges Allel von Vater und Mutter. Distanzspanne, Bahnrichtung, Reifetyp und Laufstil sind nicht erblich (zufällig bzw. abgeleitet).
+- **Erblichkeit h²** (Rest Umwelt): Klasse 0,45 (Streuung 7,5), Distanz 0,55, Boden 0,40, Attributabweichungen 0,35, Kampfgeist 0,30, Wendigkeit 0,25, Temperament 0,35, Konstanz 0,25.
+- **Jahrgangsausgleich**: Nach jeder Decksaison wird der mittlere Zuchtwert des Deckjahrgangs bei der Ausprägung abgezogen. Damit bleibt das Weltniveau konstant (Standardzeiten, Speed Figures und Preisgelder bleiben kalibriert); Zuchterfolg ist relativ zum Jahrgang.
+- **Gründertiere** (Spielstart, Importe, Migration): Der Zuchtwert wird aus dem sichtbaren Phänotyp geschätzt (bedingte Verteilung bei h²), die Allele werden darauf verteilt. Rennpferde im Ruhestand verlieren ihre Allele (sie züchten nie mehr), Abstammung und Linie bleiben.
+- **Fellfarbe** nach Extension (E/e je 50 %), Agouti (A 44,5 %, A^t 31 %, a 24,5 %) und Grey (G 4,6 %): Schimmel bei G, Fuchs bei ee, sonst Brauner (A), Dunkelbrauner (A^t) oder Rappe (aa). Gründer erhalten einen zur Farbe passenden Genotyp. Weiße Abzeichen über eine erbliche Weißneigung (Mittel der Eltern plus Streuung); Füchse zeigen mehr Weiß.
+- **Inzucht**: Koeffizient nach Wright über die Verwandtschaft der Eltern (bis 6 Generationen). Inzuchtdepression: Klasse −18 × F, Konstanz −50 × F, Temperament −20 × F, Beinrisiko × (1 + 3 F). Eine Halbgeschwister-Paarung (F = 12,5 %) kostet also etwa 2 Klassenpunkte. Die KI paart nicht über 7 %.
+- **Hengstlinien und Nicks**: 8 väterliche Linien (fiktive Stammväter). Eine verborgene, per Seed festgelegte Tabelle gibt jeder Kombination aus Vaterlinie und Muttervaterlinie einen Klassenbonus: 35 % der Kombinationen deutlich (Streuung 2, höchstens ±3,5), der Rest fast neutral. Erkennbar nur über die Statistik.
+
+### Hengste
+
+- **Register aus echten Pferden**: Die 40 Gründerhengste sind Pferde im Status „Deckhengst“ (Klasse im Mittel 71, Besitzer: die Gestüte der Züchter), mit erfundener Rennkarriere. Ihre Linien werden gleichmäßig auf die 8 Linien verteilt.
+- **Decktaxe** aus öffentlicher Rennleistung: £2.000 × e^((OR − 90)/7) bis OR 110 (≈ £35.000), darüber flacher (OR 125 ≈ £120.000), mindestens £1.000, höchstens £300.000. Jedes Jahr fortgeschrieben: Ab 3 gerateten Nachkommen fließt deren Ø Rating gegenüber dem Durchschnitt aller Pferde ein (Gewicht n/(n + 12)); die neue Taxe ist das geometrische Mittel aus alter und Zieltaxe; ab 19 Jahren −15 %.
+- **Buch**: höchstens 110 Stuten je Saison. Pension mit 24 Jahren oder, bei fremden Hengsten, nach mindestens vier Decksaisons mit weniger als 6 Stuten.
+- **Neue Hengste**: KI-Hengste gehen ins Gestüt, wenn sie beim Ruhestand ein Rating ab 98 oder zwei Black-Type-Siege haben; Spitzenhengste (ab 108) schon ab vier Jahren. Höchstens 8 neue Hengste pro Jahr, Register höchstens 70. Der Spieler kann eigene Hengste ab Rating 75 aufstellen (Deckstation, £150 Hengsthaltung pro Woche; eigene Stuten deckt er kostenlos).
+- **Hengstnamen**: keine weiblichen Titel und Wörter (Lady, Queen, Lass, Girl, Belle …). Bei der Migration werden solche Namen ersetzt, auch in der Abstammung der Nachkommen.
+
+### Gestüt und Jahreszyklus
+
+- **Decksaison** laut Konzept Januar bis Anfang März (Woche 1–10), Geburten in der Folgesaison Februar bis Mai (Woche 6–20). Biologisch läge die Decksaison eher Februar bis Juni; das Spiel folgt dem Konzept.
+- **Bedeckung**: Jede Woche der Decksaison nimmt eine Stute mit 16 % × Altersfaktor × (0,8 + 0,4 × Gestütsleiter) auf (Altersfaktor 1 bis 12 Jahre, dann −6 % je Jahr). Über die ganze Saison sind das bei durchschnittlichem Gestütsleiter rund 82 %. Die Decktaxe wird bei bestätigter Trächtigkeit fällig („No Foal, No Fee“ vereinfacht). Genotyp und Geschlecht des Fohlens stehen ab der Befruchtung fest.
+- **Fohlenverlust** 6 % × (1,4 − 0,8 × Gestütsleiter). Der Gestütsleiter verbessert zudem das Exterieur (±2 Punkte) und macht die Paarungsprognose genauer.
+- **Gestüt** als Anlage: je Stufe 6 Plätze für Stuten und Nachwuchs (£60.000, £150 Unterhalt pro Woche, höchstens 5 Stufen). Eigener Platz £35 je Pferd und Woche; ohne Platz Pension bei einem fremden Gestüt für £90 (dort arbeitet ein durchschnittlicher Gestütsleiter). Der Spieler startet ohne Gestüt und ohne Stuten.
+- **Gestütsleiter**: neue Personalrolle, Grundgehalt £360.
+- **Stuten**: Spielerstuten gehen mit acht Jahren automatisch in die Zucht, vorher auf Wunsch. Gedeckt wird bis 21 Jahre, mit 23 gehen sie in den Ruhestand. KI-Ställe halten 6–12 Stuten (je Stall fest), nehmen eigene Stuten ab Rating 62 auf und kaufen zu, wenn die Herde zu klein wird. Ab 16 Jahren mustern sie Stuten aus (15 % je Jahr über 15). Die Züchter halten 150 Stuten und kaufen ausgemusterte Rennstuten der KI (ab Rating 55) oder Importe.
+- **Nachwuchs**: Fohlen und Jährlinge stehen im Gestüt (Status „Nachwuchs“) und gehen mit zwei Jahren (1. Januar) ins Training – beim Spieler nur, wenn eine Box frei ist, sonst bleiben sie im Gestüt. Jährlinge der Züchter kommen auf die Jährlingsauktion (die besten 80), die übrigen als Zweijährige auf die Breeze-up-Auktion; fehlende Lose sind Importe mit echtem Vater aus dem Register. Der Spieler kann eigene Jährlinge, Stuten und Rennpferde in die passende Auktion einliefern oder Nachwuchs, Stuten und Hengste für 60 % des Marktwerts an die Züchter verkaufen.
+- **Zuchtstutenauktion** in Woche 49: überzählige und ältere Stuten der KI und die schwächsten der Züchter; KI-Ställe mit Platz in der Herde bieten.
+- **Spielstart**: Die Stuten von KI und Züchtern sind bereits gedeckt (Start in Woche 10), damit im ersten Frühjahr Fohlen kommen. Die Väter der Start-Rennpferde werden nur schwach nach Klasse gewählt (passend zu h²), damit die Nachkommen-Statistik der Gründerhengste so aussagekräftig ist wie später im Spiel.
+- **Population**: KI-Ställe werden zum Jahreswechsel auf 45 Pferde im Training aufgefüllt – erst aus eigener Zucht und Käufen, der Rest mit Importen (echter Vater, Mutter aus dem Ausland). Bei mehr als 48 Pferden gehen die schwächsten Älteren. Der Spieler erhält Zweijährige „aus der Zucht des Besitzers“ nur noch bis zur dritten Saison, bis die eigene Zucht greifen kann.
+
+### Prognose und Statistik
+
+- **Paarungsprognose** (öffentlich): Erwartetes Niveau des Fohlens auf der Rating-Skala = Weltmittel + Beitrag von Hengst und Stute. Jeder Beitrag ist h²/2 der öffentlichen Leistungsabweichung (Decktaxe bzw. Rating); mit wachsender Zahl gerateter Nachkommen zählt deren Ø-Abweichung (Gewicht n/(n + 6)). Spanne ±1,3 × (3 + 4 × (1 − Gestütsleiter)) Klassenpunkte. Gegen den verborgenen Erwartungswert geprüft: ohne Verzerrung, Korrelation 0,51 (der Rest steckt in den verborgenen Genen und Nicks). Dazu kommen der Inzuchtkoeffizient (exakt) und die bisher beobachtete Nick-Statistik der Linienkombination.
+- **Zucht-Statistik**: Hengsttabelle (Nachkommen, Sieger, Ø Rating, Black-Type-Sieger, mittlere Siegdistanz, Bodenneigung aus den Siegen), Mutterstuten, Nick-Matrix (Ø Rating je Vaterlinie × Muttervaterlinie ab 3 Pferden), Züchtertabelle.
+- **Marktwert** für Nachwuchs (Abstammung, Mutterleistung, Exterieur; Fohlen × 0,6), Zuchtstuten (£6.000 × e^((Rating − 70)/14), Aufschlag für erfolgreiche Nachkommen, Altersabschlag ab 11 Jahren, tragend + 60 % der Decktaxe) und Deckhengste (Decktaxe × 45 × Altersfaktor).
+
+### Teilhaberschaften und Einstellpferde
+
+- **Teilhaberschaften**: Anteile zu 25 % oder 50 % an Rennpferden der KI (ab £25.000 Marktwert, nicht die Top 3 des Stalls) und an Deckhengsten der KI und der Gestüte (ab £2.000 Decktaxe). Teilhaber halten zusammen höchstens 50 %, der Besitzer entscheidet allein. Preis = anteiliger Marktwert + 15 %, Rückverkauf an den Besitzer zu 85 %. Teilhaber erhalten ihren Anteil am Preisgeld (nach Trainer- und Jockeybeteiligung), an Decktaxen und am Verkaufserlös und tragen anteilig den Unterhalt. Mit dem Ruhestand endet die Teilhaberschaft.
+- **Einstellpferde**: Alle 4 Wochen fragt mit Wahrscheinlichkeit (Ruf − 15)/80 (8–60 %) ein fiktiver Besitzer an, wenn eine Box frei ist; die Anfrage gilt 3 Wochen. Wochenpauschale £300 + 4 × Ruf (Ruf 25: £400), dazu 10 % des Preisgelds. Nenn- und Reitgebühren trägt der Besitzer, den Unterhalt der Spieler (über die Pauschale gedeckt). Verkauf, Einlieferung, Claiming-Rennen und Zucht sind ausgeschlossen. Die Zufriedenheit steigt mit Siegen, Platzierungen und Figures über der Erwartung und sinkt, wenn ein gesundes Pferd in der Saison mehr als 8 Wochen nicht läuft; unter 20 holt der Besitzer das Pferd ab. Ab 6 Jahren beendet der Besitzer die Karriere.
+
+### Archiv und Leistung
+
+- **Archiv**: Replays (Neusimulation), Geschwindigkeitskurven, Rennereignisse und Nennlisten werden nur für die laufende und die vorige Saison aufbewahrt, Sectionals älterer Rennen nur für eigene Starts. Ergebnisse, Zeiten, Speed Figures und alle Statistiken bleiben. Archiviert wird beim Jahreswechsel und (im Speicher) beim Laden.
+- **Pferde-Index**: Pferde je Stall und Status liegen in einem nicht gespeicherten Index, der bei jedem Besitzer- oder Statuswechsel neu aufgebaut wird.
+- **10 Saisons** (npm run simulate:generations, Seed 20261117, KI-Ställe per Autopilot): keine Abstürze; im Training 914–937 Pferde, 337–343 Zuchtstuten, 34–51 Deckhengste, rund 280 Fohlen und Jährlinge; je Jahrgang 235–266 Fohlen mit Ø Klasse 59,8–60,9 (Streuung ~8,3, keine Drift); Ø Inzucht unter 0,1 %. Laufzeit Ø 67–149 ms je Woche, am Jahreswechsel bis 0,7 s. Der Spielstand wächst trotz Archiv um ~14 MB je Saison (nach 10 Saisons ~160 MB, vor allem Starts und Ergebnisse aller Rennen).
+- **Wirtschaft** (npm run calibrate:economy, 3 Saisons): Rangkorrelation Auktionspreis ~ Qualität 0,86–0,96 (Breeze-up, Jährlinge); Zuchtstuten im Median £2.000, gute bis £110.000; Autopilot-Spielerstall weiterhin etwa −£85.000 je Saison.
+
+### Migration
+
+- Version-2-Stände: Die Hengste des alten Registers werden Pferde mit denselben IDs (Abstammungen bleiben gültig). Ihre Qualität wird um 9 Punkte auf die neue Skala gehoben, Decktaxen werden neu aus der (erfundenen) Rennleistung berechnet. KI-Ställe und Züchter erhalten Stutenherden, nach der Decksaison mit Trächtigkeiten. Hengstnamen mit weiblichen Titeln werden ersetzt.

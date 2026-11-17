@@ -3,7 +3,7 @@ import type { Horse, LedgerEntry, RaceInstance, Stable, Staff, Stallion } from '
 import { conformationOf } from '../horse/generate';
 import { NameRegistry, PersonNameRegistry } from '../world/names';
 import { generateStaff, refreshStaffPool, salaryDemand, signContract } from '../staff/staff';
-import { assignPedigree, createFounderMares, createFounderStallions } from '../breeding/stud';
+import { assignPedigree, createFounderMares, createFounderStallions, isFemaleTitle, stallionName } from '../breeding/stud';
 import { initGenetics } from '../breeding/genetics';
 import { aiPlanMatings, COVER_LAST_WEEK, seedPregnancies } from '../breeding/cycle';
 import { recordBalance } from '../economy/finance';
@@ -200,12 +200,20 @@ function migrateV2(raw: Record<string, unknown>): void {
   const r = new Rng(g.seed).fork('migrate-v3');
   g.version = 3;
   g.breeding = { plans: {}, pregnancies: {}, barren: [] };
+  g.boardingOffers = [];
   const names = new NameRegistry(usedHorseNames(g));
   if (!g.genetics) initGenetics(g, r.fork('genetics'), names);
   const old = Object.values(g.stallions as unknown as Record<string, V2Stallion | Stallion>);
   const isOld = old.length > 0 && 'quality' in old[0]!;
   if (isOld) {
-    const preset = sortedById(old as V2Stallion[]).map((x) => ({ id: x.id, name: x.name, foalYear: x.foalYear, quality: x.quality }));
+    // Das alte Register lag im Mittel bei 62; Deckhengste sind jetzt Spitzenpferde (Mittel 71).
+    // Hengstnamen mit weiblichem Titel werden ersetzt (auch in der Abstammung ihrer Nachkommen).
+    const nr = r.fork('rename');
+    const preset = sortedById(old as V2Stallion[]).map((x) => {
+      const name = isFemaleTitle(x.name) ? stallionName(nr, names) : x.name;
+      if (name !== x.name) for (const h of Object.values(g.horses)) if (h.sireId === x.id) h.sireName = name;
+      return { id: x.id, name, foalYear: x.foalYear, quality: Math.min(84, x.quality + 9) };
+    });
     g.stallions = {};
     createFounderStallions(g, r.fork('stallions'), names, preset.length, preset);
   } else if (!old.length) {

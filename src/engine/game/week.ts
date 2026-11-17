@@ -10,6 +10,8 @@ import { updateValues } from '../economy/value';
 import { activeStallions, importHorse } from '../breeding/stud';
 import { breedingTurnover, breedingWeek, cullOldMares, mareCounts, retireRacehorse, studWorthy } from '../breeding/cycle';
 import { dropLoci } from '../breeding/genetics';
+import { partnershipWeek } from '../market/partnership';
+import { boardingIncome, boardingTurnover, boardingWeek } from '../market/boarding';
 import { auctionWeek, closeAuctions } from '../market/auction';
 import { marketWeek, transferHorse } from '../market/transfer';
 import { declareRace, runRace } from './raceDay';
@@ -153,14 +155,17 @@ export function advanceWeek(g: GameState, now: () => number = () => 0): WeekSumm
     }
   }
 
-  // Zucht: Decksaison und Geburten
+  // Zucht: Decksaison und Geburten; Teilhaberschaften und Einstellpferde
   breedingWeek(g);
+  partnershipWeek(g);
+  boardingIncome(g);
 
   // Personal, Finanzen, Markt
   const staff = staffWeek(g);
   const fin = financeWeek(g, staff.salaries, (horseId, to, price) => transferHorse(g, horseId, to, price, 'forced_sale'));
   closeAuctions(g);
   marketWeek(g);
+  boardingWeek(g);
   updateValues(g);
   updateReputation(g);
   recordBalance(g);
@@ -199,6 +204,7 @@ export function advanceWeek(g: GameState, now: () => number = () => 0): WeekSumm
 export function seasonTurnover(g: GameState): void {
   const r = new Rng(g.seed).fork('turnover', g.season);
   const names = new NameRegistry(usedHorseNames(g));
+  boardingTurnover(g);
   cullOldMares(g, r.fork('cull'));
   const mares = mareCounts(g);
   let retired = 0;

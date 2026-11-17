@@ -1,3 +1,5 @@
+import { raceRecordLevel } from '../breeding/stud';
+import { sharesOffered } from '../market/partnership';
 import type {
   AttrKey,
   ConditionCell,
@@ -27,7 +29,7 @@ import { buildCourse, circuitOutline, pointOnCourse } from '../race/geometry';
 import { canEnter } from './commands';
 import { replayRace } from './raceDay';
 import { dateLabel, furlongs, sexLabel, weekLabel, COLOUR_LABEL } from './format';
-import type { GameState, WeekSummary } from './state';
+import { horsesWithStatus, type GameState, type WeekSummary } from './state';
 import { activeJockeys, apprenticeAllowance, figurePrecision, isSuspended, stars } from '../staff/staff';
 import { horseMarketInfo, type HorseMarketInfo, officeExtras, type OfficeExtras } from './econQueries';
 
@@ -60,6 +62,8 @@ export interface HeaderView {
   marketAlerts: number;
   /** Abgänge und auslaufende Verträge */
   staffAlerts: number;
+  /** Gestüt: Stuten ohne Deckplan (Dez.–Feb.), Zweijährige ohne Box */
+  studAlerts: number;
 }
 
 function stableRef(g: GameState, id: string): StableRef {
@@ -86,11 +90,24 @@ export function headerView(g: GameState): HeaderView {
     overdraftLimit: g.config.overdraftLimit,
     marketAlerts:
       g.offers.filter((o) => (o.sellerId === g.playerStableId && o.status === 'open') || (o.buyerId === g.playerStableId && o.status === 'countered')).length +
-      Object.values(g.auctions).filter((a) => a.status === 'live').length,
+      Object.values(g.auctions).filter((a) => a.status === 'live').length +
+      g.boardingOffers.length,
     staffAlerts: Object.values(g.staff).filter(
       (x) => x.contract?.stableId === g.playerStableId && (x.leaving !== null || (g.week >= 44 && x.contract.endSeason <= g.season)),
     ).length,
+    studAlerts: studAlerts(g),
   };
+}
+
+function studAlerts(g: GameState): number {
+  const planning = g.week >= 48 || g.week <= 9;
+  const season = g.week <= 10 ? g.season : g.season + 1;
+  let n = 0;
+  for (const h of horsesWithStatus(g, g.playerStableId, 'broodmare', 'young')) {
+    if (h.status === 'young' && season - h.foalYear >= 2 && g.week <= 10) n++;
+    if (h.status === 'broodmare' && planning && season - h.foalYear <= 21 && !g.breeding.plans[h.id] && !g.breeding.pregnancies[`${h.id}:${season}`]) n++;
+  }
+  return n;
 }
 
 // ---------------------------------------------------------------- Büro
@@ -326,6 +343,10 @@ export interface HorseProfileView {
   own: boolean;
   placeholder: boolean;
   status: string;
+  statusKey: Horse['status'];
+  boarding: { ownerName: string; weeklyFee: number; satisfaction: number } | null;
+  /** Aktionen des Spielers (Zucht) */
+  actions: { toBroodmare: boolean; toStud: boolean; intoTraining: boolean; sellToBreeders: boolean; retire: boolean; sharesOffered: boolean };
   officialRating: number | null;
   ratingHistory: RatingEntry[];
   condition: {
@@ -398,6 +419,23 @@ export function careerRow(g: GameState, r: Run): CareerRow {
   };
 }
 
+/** Status für die Anzeige (Training, Gestüt, Ruhestand). */
+export function statusLabel(g: GameState, h: Horse): string {
+  const age = g.season - h.foalYear;
+  switch (h.status) {
+    case 'active':
+      return h.boarding ? `im Training (Einstellpferd von ${h.boarding.ownerName})` : 'im Training';
+    case 'young':
+      return age === 0 ? 'Fohlen im Gestüt' : age === 1 ? 'Jährling im Gestüt' : 'im Gestüt, noch nicht im Training';
+    case 'broodmare':
+      return 'Zuchtstute';
+    case 'stud':
+      return g.stallions[h.id]?.active ? 'Deckhengst' : 'im Ruhestand';
+    default:
+      return 'im Ruhestand';
+  }
+}
+
 export function horseProfile(g: GameState, horseId: string): HorseProfileView {
   const h = g.horses[horseId];
   if (!h) throw new Error('Pferd nicht gefunden.');
@@ -426,7 +464,17 @@ export function horseProfile(g: GameState, horseId: string): HorseProfileView {
     trainerName: trainer?.name ?? '–',
     own,
     placeholder: h.placeholder,
-    status: h.status === 'active' ? 'im Training' : 'im Ruhestand',
+    status: statusLabel(g, h),
+    statusKey: h.status,
+    boarding: h.boarding ? { ownerName: h.boarding.ownerName, weeklyFee: h.boarding.weeklyFee, satisfaction: Math.round(h.boarding.satisfaction) } : null,
+    actions: {
+      toBroodmare: own && !h.boarding && h.status === 'active' && h.sex === 'female' && g.season - h.foalYear >= 3,
+      toStud: own && !h.boarding && h.status === 'active' && h.sex === 'male' && !h.gelded && g.season - h.foalYear >= 3 && (raceRecordLevel(h) ?? 0) >= 75,
+      intoTraining: own && h.status === 'young' && g.season - h.foalYear >= 2,
+      sellToBreeders: own && (h.status === 'young' || h.status === 'broodmare' || h.status === 'stud'),
+      retire: own && !h.boarding && h.status !== 'retired',
+      sharesOffered: !own && sharesOffered(g, h),
+    },
     officialRating: h.officialRating,
     ratingHistory: h.ratingHistory,
     condition: own

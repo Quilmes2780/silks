@@ -15,7 +15,9 @@ export type Route =
   | { name: 'market'; tab?: string }
   | { name: 'auction'; id: string }
   | { name: 'finance' }
-  | { name: 'facilities' };
+  | { name: 'facilities' }
+  | { name: 'stud'; tab?: string; mareId?: string }
+  | { name: 'breeding'; tab?: string };
 
 export function parseRoute(hash: string): Route {
   const parts = hash.replace(/^#\/?/, '').split('/').map(decodeURIComponent);
@@ -44,6 +46,10 @@ export function parseRoute(hash: string): Route {
       return { name: 'finance' };
     case 'facilities':
       return { name: 'facilities' };
+    case 'stud':
+      return { name: 'stud', tab: parts[1] || undefined, mareId: parts[2] || undefined };
+    case 'breeding':
+      return { name: 'breeding', tab: parts[1] || undefined };
     default:
       return { name: 'saves' };
   }
@@ -61,6 +67,10 @@ export function href(r: Route): string {
       return `#/market${r.tab ? `/${r.tab}` : ''}`;
     case 'auction':
       return `#/auction/${encodeURIComponent(r.id)}`;
+    case 'stud':
+      return `#/stud${r.tab ? `/${r.tab}` : ''}${r.mareId ? `/${encodeURIComponent(r.mareId)}` : ''}`;
+    case 'breeding':
+      return `#/breeding${r.tab ? `/${r.tab}` : ''}`;
     default:
       return `#/${r.name}`;
   }

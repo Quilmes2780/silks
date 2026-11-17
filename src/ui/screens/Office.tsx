@@ -39,6 +39,7 @@ export function OfficeScreen() {
                   else if (m.staffId) navigate({ name: 'staff' });
                   else if (m.kind === 'market') navigate({ name: 'market' });
                   else if (m.kind === 'finance') navigate({ name: 'finance' });
+                  else if (m.kind === 'breeding') navigate({ name: 'stud' });
                 }}
               >
                 <div className="row">

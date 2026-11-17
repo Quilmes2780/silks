@@ -14,7 +14,7 @@ import {
 } from '../staff/staff';
 import { FACILITY_INFO, facilityUpkeep, type FacilityKey, MAX_BOXES, STUD_MAX_LEVEL } from '../economy/finance';
 import { publicSireQuality, studHorses, studPlaces } from '../breeding/stud';
-import { agentReport, AUCTION_SCHEDULE, increment, lotPublicValue } from '../market/auction';
+import { agentReport, AUCTION_SCHEDULE, consignable, increment, lotPublicValue } from '../market/auction';
 import { freeBoxes } from '../market/transfer';
 import { formLabel } from '../horse/training';
 import { formatWeight } from '../season/rules';
@@ -480,7 +480,7 @@ export function marketView(g: GameState): MarketView {
     for (const s of AUCTION_SCHEDULE) {
       const id = `${season}-${s.kind}`;
       const wi = (season - g.startSeason) * 52 + s.week - 1;
-      if (wi < g.weekIndex || g.auctions[id] || upcoming.length >= 3) continue;
+      if (wi < g.weekIndex || g.auctions[id] || upcoming.length >= 4) continue;
       upcoming.push({ name: `${s.name} ${season}`, dateLabel: `${weekLabel(season, s.week)} (Katalog 3 Wochen vorher)` });
     }
   }
@@ -526,6 +526,8 @@ export function marketView(g: GameState): MarketView {
 
 export interface LotRow {
   lotId: string;
+  /** Zuchtstuten: tragend von … */
+  note: string | null;
   horseId: string;
   name: string;
   age: number;
@@ -597,8 +599,10 @@ export function auctionView(g: GameState, auctionId: string): AuctionView {
       const age = a.season - h.foalYear;
       const sire = h.sireId ? g.stallions[h.sireId] : undefined;
       const rep = lot.consignorId === g.playerStableId ? null : agentReport(g, lot, agent);
+      const preg = h.status === 'broodmare' ? (g.breeding.pregnancies[`${h.id}:${g.season}`] ?? g.breeding.pregnancies[`${h.id}:${g.season - 1}`]) : undefined;
       return {
         lotId: lot.id,
+        note: h.status === 'broodmare' ? (preg ? `tragend von ${g.horses[preg.sireId]?.name ?? '?'}` : 'nicht tragend') : null,
         horseId: h.id,
         name: h.name,
         age,
@@ -624,9 +628,10 @@ export function auctionView(g: GameState, auctionId: string): AuctionView {
         mine: lot.consignorId === g.playerStableId,
       };
     });
-  const consignable =
-    a.kind === 'horses_in_training' && a.status === 'catalogue'
-      ? horsesOfStable(g, g.playerStableId)
+  const canConsign =
+    a.kind !== 'breeze_up' && a.status === 'catalogue'
+      ? sortedById(Object.values(g.horses))
+          .filter((h) => h.stableId === g.playerStableId && consignable(g, a.kind, h))
           .filter((h) => !a.lots.some((l) => l.horseId === h.id && l.status === 'pending'))
           .map((h) => ({ horseId: h.id, name: h.name, value: h.value }))
       : [];
@@ -641,7 +646,7 @@ export function auctionView(g: GameState, auctionId: string): AuctionView {
     spendable: g.stables[g.playerStableId]!.balance + g.config.overdraftLimit,
     hasAgent: agent !== null,
     lots,
-    canConsign: consignable,
+    canConsign,
   };
 }
 
@@ -687,7 +692,7 @@ export function horseMarketInfo(g: GameState, h: Horse): HorseMarketInfo {
     offers: g.offers.filter((o) => o.horseId === h.id && (o.status === 'open' || o.status === 'countered')).map((o) => offerRow(g, o)),
     canConsign: own
       ? sortedById(Object.values(g.auctions))
-          .filter((a) => a.kind === 'horses_in_training' && a.status === 'catalogue')
+          .filter((a) => a.status === 'catalogue' && consignable(g, a.kind, h))
           .map((a) => ({ auctionId: a.id, name: a.name }))
       : [],
     claimable: !own && g.stables[h.stableId]?.kind === 'ai',

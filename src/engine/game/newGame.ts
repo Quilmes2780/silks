@@ -120,6 +120,7 @@ export function createGame(o: NewGameOptions): GameState {
     offers: [],
     genetics: { lines: [], nicks: {}, offsets: {} },
     breeding: { plans: {}, pregnancies: {}, barren: [] },
+    boardingOffers: [],
     finance: { balanceHistory: [], overdraftWeeks: 0, horses: {} },
     inbox: [],
     ledger: [],

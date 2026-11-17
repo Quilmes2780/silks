@@ -1,3 +1,5 @@
+import { payPartners } from '../market/partnership';
+import { TRAINER_PRIZE_SHARE } from '../market/boarding';
 import { deriveSeed, Rng } from '../rng';
 import { simulateRace, type SimOutput, type SimRunner } from '../race/sim';
 import { assignWeights, checkEligibility } from '../season/rules';
@@ -262,6 +264,12 @@ function settleRace(g: GameState, race: RaceInstance, runs: Run[]): void {
     const j = g.staff[run.jockeyId]!;
     const jp = j.jockey!;
     const retained = j.contract?.stableId === run.stableId;
+    // Einstellpferd: Gebühren trägt der Besitzer, der Trainer erhält 10 % des Preisgelds
+    if (h.boarding && run.stableId === g.playerStableId) {
+      if (run.prize > 0) {
+        book(g, run.stableId, { amount: Math.round(run.prize * TRAINER_PRIZE_SHARE), kind: 'boarding_fee', text: `Trainer-Anteil ${t.name}: ${h.name} (${run.position}.)`, raceId: race.id, horseId: h.id });
+      }
+    } else {
     if (!retained) book(g, run.stableId, { amount: -jp.fee, kind: 'jockey_fee', text: `Reitgebühr ${j.name} (${h.name})`, raceId: race.id, horseId: h.id });
     if (run.prize > 0) {
       book(g, run.stableId, { amount: run.prize, kind: 'prize', text: `Preisgeld ${t.name}: ${h.name} (${run.position}.)`, raceId: race.id, horseId: h.id });
@@ -272,6 +280,9 @@ function settleRace(g: GameState, race: RaceInstance, runs: Run[]): void {
       if (share > 0) {
         book(g, run.stableId, { amount: -share, kind: 'prize_share', text: `Erfolgsbeteiligung Trainer/Jockey (${h.name})`, raceId: race.id, horseId: h.id });
       }
+      // Teilhaber erhalten ihren Anteil am Preisgeld nach Beteiligungen
+      payPartners(g, h, run.stableId, run.prize - share, `Preisgeld ${t.name}`, race.id);
+    }
     }
     if (run.position === 1) jp.careerWins += 1;
     j.experience = Math.min(100, j.experience + 0.15);

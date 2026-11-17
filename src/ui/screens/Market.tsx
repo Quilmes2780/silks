@@ -3,6 +3,7 @@ import { toast, useCommand, useQuery } from '../api';
 import { Fig, HorseLink, Link, Loading, Modal, Money, RaceLink, SilksIcon } from '../components/common';
 import { MoneyInput } from '../components/Contract';
 import type { HorseMarketRow, MarketView, OfferRow } from '../../engine/game/econQueries';
+import { Boarding, Shares } from './Partnerships';
 
 const TABS: Array<[string, string]> = [
   ['auctions', 'Auktionen'],
@@ -10,6 +11,8 @@ const TABS: Array<[string, string]> = [
   ['offers', 'Angebote'],
   ['claiming', 'Claiming'],
   ['sell', 'Meine Pferde verkaufen'],
+  ['shares', 'Teilhaberschaften'],
+  ['boarding', 'Einstellpferde'],
 ];
 
 export function MarketScreen({ tab = 'auctions' }: { tab?: string }) {
@@ -37,6 +40,8 @@ export function MarketScreen({ tab = 'auctions' }: { tab?: string }) {
       {tab === 'offers' && <Offers rows={data.offers} />}
       {tab === 'claiming' && <Claiming data={data} />}
       {tab === 'sell' && <Sell data={data} />}
+      {tab === 'shares' && <Shares />}
+      {tab === 'boarding' && <Boarding />}
     </div>
   );
 }
@@ -91,7 +96,7 @@ function Auctions({ data }: { data: MarketData }) {
         ))}
         <p className="small muted">
           Breeze-up (April): Zweijährige mit gemessener Galoppzeit. Jährlinge (Oktober): nur Abstammung und Exterieur – ein Bloodstock-Agent macht die Gutachten genauer.
-          Horses in Training (November): ausgemusterte Rennpferde; eigene Pferde kannst du einliefern.
+          Horses in Training (November): ausgemusterte Rennpferde. Zuchtstuten (Dezember): Stuten mit Rennleistung, oft tragend. Eigene Pferde, Jährlinge und Stuten kannst du in die passende Auktion einliefern.
         </p>
       </div>
     </div>

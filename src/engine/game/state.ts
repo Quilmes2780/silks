@@ -16,6 +16,7 @@ import type {
 } from '../types';
 import type { WorldData } from '../world/load';
 import type { GeneticsState } from '../breeding/genetics';
+import type { BoardingOffer } from '../market/boarding';
 
 export interface GameConfig {
   aiStables: number;
@@ -102,6 +103,8 @@ export interface GameState {
   finance: FinanceState;
   genetics: GeneticsState;
   breeding: BreedingState;
+  /** Anfragen fremder Besitzer (Einstellpferde) */
+  boardingOffers: BoardingOffer[];
   inbox: InboxMessage[];
   ledger: LedgerEntry[];
   counters: { horse: number; run: number; msg: number; staff: number; offer: number; lot: number };

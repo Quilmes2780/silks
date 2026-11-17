@@ -58,7 +58,7 @@ export function AuctionScreen({ id }: { id: string }) {
                 <th>Abstammung</th>
                 <th>Exterieur</th>
                 {data.kind === 'breeze_up' && <th className="num">Breeze 2f</th>}
-                {data.kind === 'horses_in_training' && <th className="num">OR</th>}
+                {(data.kind === 'horses_in_training' || data.kind === 'broodmare') && <th className="num">OR</th>}
                 <th>Gutachten</th>
                 <th className="num">Katalogwert</th>
                 <th className="num">Stand</th>
@@ -101,6 +101,7 @@ function LotLine({ l, live, kind }: { l: LotRow; live: boolean; kind: AuctionVie
         <div className="small muted">
           {l.age}j {l.sex}, {l.colour}
           {l.mine ? ' · dein Pferd' : l.consignor.isPlayer ? '' : ` · ${l.consignor.name}`}
+          {l.note && <> · {l.note}</>}
         </div>
       </td>
       <td className="small">
@@ -118,7 +119,7 @@ function LotLine({ l, live, kind }: { l: LotRow; live: boolean; kind: AuctionVie
       </td>
       <td className="small">{l.conformation}</td>
       {kind === 'breeze_up' && <td className="num mono">{l.breezeTimeS?.toFixed(2) ?? '–'}</td>}
-      {kind === 'horses_in_training' && <td className="num">{l.officialRating ?? '–'}</td>}
+      {(kind === 'horses_in_training' || kind === 'broodmare') && <td className="num">{l.officialRating ?? '–'}</td>}
       <td className="small">
         {l.report ? (
           <>

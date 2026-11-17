@@ -15,6 +15,8 @@ import { MarketScreen } from './screens/Market';
 import { AuctionScreen } from './screens/Auction';
 import { FinanceScreen } from './screens/Finance';
 import { FacilitiesScreen } from './screens/Facilities';
+import { StudScreen } from './screens/Stud';
+import { BreedingScreen } from './screens/Breeding';
 import type { WeekSummary } from '../engine/game/state';
 import type { RunLink } from '../engine/game/queries';
 
@@ -98,6 +100,10 @@ function Screen({ route }: { route: Route }) {
       return <FinanceScreen />;
     case 'facilities':
       return <FacilitiesScreen />;
+    case 'stud':
+      return <StudScreen tab={route.tab} mareId={route.mareId} />;
+    case 'breeding':
+      return <BreedingScreen tab={route.tab} />;
     default:
       return <OfficeScreen />;
   }
@@ -126,6 +132,8 @@ function Sidebar({ route }: { route: Route }) {
         {item({ name: 'stable' }, 'Stall')}
         {item({ name: 'calendar' }, 'Rennkalender')}
         {item({ name: 'raceday' }, 'Renntag', h && h.runnersThisWeek > 0 ? <span className="badge">{h.runnersThisWeek}</span> : null)}
+        {item({ name: 'stud' }, 'Gestüt', h && h.studAlerts > 0 ? <span className="badge">{h.studAlerts}</span> : null)}
+        {item({ name: 'breeding' }, 'Zucht-Statistik')}
         {item({ name: 'market' }, 'Markt', h && h.marketAlerts > 0 ? <span className="badge">{h.marketAlerts}</span> : null)}
         {item({ name: 'staff' }, 'Personal', h && h.staffAlerts > 0 ? <span className="badge">{h.staffAlerts}</span> : null)}
         {item({ name: 'jockeys' }, 'Jockeys')}
@@ -135,7 +143,7 @@ function Sidebar({ route }: { route: Route }) {
         {item({ name: 'saves' }, 'Spielstände')}
       </nav>
       <div className="foot">
-        Phase 3 · Zucht und Generationen folgen in Phase 4.
+        Phase 4 · Zucht und Generationen.
         <br />
         Zufall: {h ? Math.round(h.randomness * 100) : '–'} %
       </div>

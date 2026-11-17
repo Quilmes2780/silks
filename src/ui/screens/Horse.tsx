@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { type ReactElement, useMemo, useState } from 'react';
 import { call, useCommand, useQuery } from '../api';
 import { Chart } from '../components/Chart';
 import { Bar, ClassPill, Fig, HorseLink, Lengths, Link, Loading, Money, PlaceholderTag, RaceLink, RunLinkValue, SilksIcon, Time } from '../components/common';
@@ -21,7 +21,7 @@ const TABS: Array<[string, string]> = [
 export function HorseScreen({ id, tab = 'overview' }: { id: string; tab?: string }) {
   const { data: h, error } = useQuery('horseProfile', { horseId: id });
   if (!h) return <Loading error={error} />;
-  const tabs = h.own ? TABS : TABS.filter(([k]) => k !== 'training' && k !== 'health');
+  const tabs = h.own && h.statusKey === 'active' ? TABS : TABS.filter(([k]) => k !== 'training' && k !== 'health');
   return (
     <div className="col" style={{ gap: 14 }}>
       <div className="row">
@@ -41,7 +41,8 @@ export function HorseScreen({ id, tab = 'overview' }: { id: string; tab?: string
           </div>
         </div>
         <div style={{ flex: 1 }} />
-        {h.own && (
+        <BreedingActions h={h} />
+        {h.own && h.statusKey === 'active' && (
           <a className="btn primary" href={`#/calendar/${h.horseId}`}>
             Passende Rennen suchen
           </a>
@@ -598,32 +599,172 @@ function Health({ h }: { h: HorseProfileView }) {
   );
 }
 
-function Pedigree({ h }: { h: HorseProfileView }) {
+function BreedingActions({ h }: { h: HorseProfileView }) {
+  const { run, busy } = useCommand();
+  const a = h.actions;
   return (
-    <div className="card">
-      <h3>Abstammung</h3>
-      <dl className="kv">
-        <dt>Vater</dt>
-        <dd>
-          {h.sire ?? <span className="muted">unbekannt</span>}
-          {h.market.sire && <span className="small muted"> · Decktaxe <Money v={h.market.sire.fee} /></span>}
-        </dd>
-        <dt>Mutter</dt>
-        <dd>{h.dam ?? <span className="muted">unbekannt</span>}</dd>
-        <dt>Jahrgang</dt>
-        <dd>{h.foalYear}</dd>
-        <dt>Besitzer</dt>
-        <dd>
-          <span className="row"><SilksIcon silks={h.stable.silks} size={18} /> {h.stable.name}</span>
-        </dd>
-      </dl>
-      <p className="small muted" style={{ marginTop: 12 }}>
-        Die Hengste stammen aus einem generierten Register; ihre Decktaxe spiegelt die Vererbungsqualität. Zucht, Genetik und Abstammungs-Statistik folgen in Phase 4.
-      </p>
-      <p className="small">
-        Zurück zu <HorseLink id={h.horseId} name={h.name} />.
-      </p>
+    <>
+      {a.toBroodmare && (
+        <button className="btn" disabled={busy} onClick={() => window.confirm(`${h.name} beendet die Rennkarriere und geht als Zuchtstute ins Gestüt. Fortfahren?`) && run('toBroodmare', { horseId: h.horseId })}>
+          In die Zucht
+        </button>
+      )}
+      {a.toStud && (
+        <button className="btn" disabled={busy} onClick={() => window.confirm(`${h.name} beendet die Rennkarriere und wird Deckhengst. Fortfahren?`) && run('standAsStallion', { horseId: h.horseId })}>
+          Als Deckhengst aufstellen
+        </button>
+      )}
+      {a.intoTraining && (
+        <button className="btn primary" disabled={busy} onClick={() => run('bringIntoTraining', { horseId: h.horseId })}>
+          Ins Training holen
+        </button>
+      )}
+      {h.statusKey === 'broodmare' && h.own && (
+        <a className="btn primary" href={`#/stud/mares/${h.horseId}`}>
+          Hengst wählen
+        </a>
+      )}
+      {a.sellToBreeders && (
+        <button
+          className="btn"
+          disabled={busy}
+          onClick={async () => {
+            if (!window.confirm(`${h.name} für 60 % des Marktwerts an die Züchter verkaufen?`)) return;
+            await run('sellToBreeders', { horseId: h.horseId });
+          }}
+        >
+          An Züchter verkaufen
+        </button>
+      )}
+      {a.retire && h.statusKey !== 'active' && (
+        <button className="btn danger" disabled={busy} onClick={() => window.confirm(`${h.name} endgültig in den Ruhestand schicken?`) && run('retireHorse', { horseId: h.horseId })}>
+          Ruhestand
+        </button>
+      )}
+      {a.sharesOffered && (
+        <a className="btn" href="#/market/shares">
+          Anteil kaufen
+        </a>
+      )}
+    </>
+  );
+}
+
+function Pedigree({ h }: { h: HorseProfileView }) {
+  const { data: p, error } = useQuery('pedigree', { horseId: h.horseId });
+  if (!p) return <Loading error={error} />;
+  const cell = (n: { id: string | null; name: string | null; rating: number | null; stallion: boolean }, span: number, key: string) => (
+    <td key={key} rowSpan={span} className={`ped ${n.stallion ? 'ped-m' : ''}`}>
+      {n.id ? <HorseLink id={n.id} name={n.name ?? '?'} /> : n.name ? <span>{n.name}</span> : <span className="muted">unbekannt</span>}
+      {n.rating !== null && <span className="small muted"> ({n.rating})</span>}
+    </td>
+  );
+  // 16 Zeilen: Generation k hat 2^(k+1) Einträge mit rowSpan 16 / 2^(k+1)
+  const rows: ReactElement[] = [];
+  for (let r = 0; r < 16; r++) {
+    const tds: ReactElement[] = [];
+    p.generations.forEach((gen, k) => {
+      const span = 16 / gen.length;
+      if (r % span === 0) tds.push(cell(gen[r / span]!, span, `${k}-${r}`));
+    });
+    rows.push(<tr key={r}>{tds}</tr>);
+  }
+  return (
+    <div className="col" style={{ gap: 14 }}>
+      <div className="grid side">
+        <div className="card">
+          <h3>Stammbaum</h3>
+          <table className="pedigree">
+            <tbody>{rows}</tbody>
+          </table>
+          <p className="small muted">In Klammern das Official Rating (bzw. die beste Speed Figure). Hengste sind hervorgehoben.</p>
+        </div>
+        <div className="card">
+          <h3>Zuchtdaten</h3>
+          <dl className="kv">
+            <dt>Jahrgang</dt>
+            <dd>{h.foalYear}</dd>
+            <dt>Vaterlinie</dt>
+            <dd>{p.line ?? '–'}</dd>
+            <dt>Muttervaterlinie</dt>
+            <dd>{p.damSireLine ?? '–'}</dd>
+            <dt>Inzucht</dt>
+            <dd>{p.coi === null ? '–' : p.coi === 0 ? 'keine (in 6 Generationen)' : `${(p.coi * 100).toFixed(2)} %`}</dd>
+            {p.stallion && (
+              <>
+                <dt>Deckhengst</dt>
+                <dd>
+                  {p.stallion.active ? <>Decktaxe <Money v={p.stallion.fee} />, {p.stallion.covers} Stuten in dieser Saison, deckt seit {p.stallion.since}</> : 'in Pension'} · {p.stallion.owner}
+                </dd>
+              </>
+            )}
+            {p.pregnancy && (
+              <>
+                <dt>Tragend</dt>
+                <dd>
+                  von {p.pregnancy.sire}, Termin {p.pregnancy.due}
+                </dd>
+              </>
+            )}
+            {p.partners.length > 0 && (
+              <>
+                <dt>Teilhaber</dt>
+                <dd>{p.partners.map((x) => `${x.name} (${Math.round(x.share * 100)} %)`).join(', ')}</dd>
+              </>
+            )}
+            <dt>Besitzer</dt>
+            <dd>
+              <span className="row"><SilksIcon silks={h.stable.silks} size={18} /> {h.stable.name}</span>
+            </dd>
+          </dl>
+        </div>
+      </div>
+      {p.progeny && (
+        <div className="card">
+          <h3>Nachkommen</h3>
+          <p className="small">
+            {p.progeny.stats.foals} Nachkommen, {p.progeny.stats.runners} gelaufen, {p.progeny.stats.winners} Sieger
+            {p.progeny.stats.stakesWinners > 0 && <>, {p.progeny.stats.stakesWinners} Black-Type-Sieger</>}
+            {p.progeny.stats.avgRating !== null && <> · Ø Rating {p.progeny.stats.avgRating}, bestes {p.progeny.stats.bestRating}</>}
+            {p.progeny.tendency.winDistanceM && <> · Ø Siegdistanz {(p.progeny.tendency.winDistanceM / 201.168).toFixed(1)}f</>}
+          </p>
+          <FamilyTable rows={p.progeny.list} mateLabel={p.progeny.mateLabel} />
+        </div>
+      )}
+      <div className="card">
+        <h3>Geschwister (gleiche Mutter)</h3>
+        {p.siblings.length === 0 ? <div className="empty">Keine bekannten Geschwister.</div> : <FamilyTable rows={p.siblings.map((x) => ({ ...x, mate: x.sire }))} mateLabel="Vater" />}
+      </div>
     </div>
+  );
+}
+
+function FamilyTable({ rows, mateLabel }: { rows: Array<{ id: string; name: string; age: number; mate: string | null; rating: number | null; wins: number; starts: number }>; mateLabel: string }) {
+  return (
+    <table className="data">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th className="num">Alter</th>
+          <th>{mateLabel}</th>
+          <th className="num">Starts</th>
+          <th className="num">Siege</th>
+          <th className="num">Rating</th>
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map((x) => (
+          <tr key={x.id}>
+            <td><HorseLink id={x.id} name={x.name} /></td>
+            <td className="num">{x.age}</td>
+            <td>{x.mate ?? '–'}</td>
+            <td className="num">{x.starts}</td>
+            <td className="num">{x.wins}</td>
+            <td className="num">{x.rating ?? '–'}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
   );
 }
 

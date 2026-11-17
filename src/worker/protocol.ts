@@ -18,6 +18,7 @@ import type { OfferResult } from '../engine/market/transfer';
 import type { BidResult } from '../engine/market/auction';
 import type { FacilityKey } from '../engine/economy/finance';
 import type { Silks, Tactic, TrainingPlan } from '../engine/types';
+import type { BreedingStatsView, PartnershipsView, PedigreeView, StallionRow, StudView } from '../engine/breeding/queries';
 
 /**
  * Typisierte Nachrichten zwischen UI und Worker.
@@ -87,6 +88,19 @@ export interface Api {
   consign: { req: { horseId: string; auctionId: string; reserve: number }; res: null };
   withdrawLot: { req: { horseId: string; auctionId: string }; res: null };
   claimHorse: { req: { raceId: string; horseId: string }; res: { claimed: boolean } };
+  // Zucht
+  setMating: { req: { mareId: string; stallionId: string | null }; res: { planned: boolean } };
+  toBroodmare: { req: { horseId: string }; res: null };
+  standAsStallion: { req: { horseId: string }; res: null };
+  bringIntoTraining: { req: { horseId: string }; res: null };
+  retireHorse: { req: { horseId: string }; res: null };
+  sellToBreeders: { req: { horseId: string }; res: { price: number } };
+  // Teilhaberschaften und Einstellpferde
+  buyShare: { req: { horseId: string; share: number }; res: { price: number } };
+  sellShare: { req: { horseId: string }; res: { price: number } };
+  acceptBoarding: { req: { offerId: string }; res: null };
+  declineBoarding: { req: { offerId: string }; res: null };
+  endBoarding: { req: { horseId: string }; res: null };
   // Abfragen
   header: { req: void; res: HeaderView };
   office: { req: void; res: OfficeView };
@@ -104,6 +118,11 @@ export interface Api {
   facilities: { req: void; res: FacilitiesView };
   market: { req: void; res: MarketView };
   auction: { req: { auctionId: string }; res: AuctionView };
+  stud: { req: void; res: StudView };
+  stallions: { req: { mareId?: string | null }; res: { rows: StallionRow[]; mare: { id: string; name: string; line: string | null } | null; studManager: number | null } };
+  pedigree: { req: { horseId: string }; res: PedigreeView };
+  breedingStats: { req: void; res: BreedingStatsView };
+  partnerships: { req: void; res: PartnershipsView };
 }
 
 export type ApiType = keyof Api;

@@ -46,6 +46,7 @@ export interface HeaderView {
   saveName: string;
   season: number;
   week: number;
+  weekIndex: number;
   weekLabel: string;
   balance: number;
   stable: StableRef;
@@ -68,6 +69,7 @@ export function headerView(g: GameState): HeaderView {
     saveName: g.name,
     season: g.season,
     week: g.week,
+    weekIndex: g.weekIndex,
     weekLabel: weekLabel(g.season, g.week),
     balance: g.stables[g.playerStableId]!.balance,
     stable: stableRef(g, g.playerStableId),

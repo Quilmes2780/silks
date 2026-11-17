@@ -5,7 +5,7 @@ import type { Attributes, Horse, Jockey, Silks, SilksPattern, Stable, Trainer } 
 import { ATTR_KEYS } from '../types';
 import { NameRegistry, PersonNameRegistry, stableName } from '../world/names';
 import type { RawHorse, WorldData } from '../world/load';
-import { DEFAULT_CONFIG, type GameConfig, type GameState, weekIndexOf } from './state';
+import { addInbox, DEFAULT_CONFIG, type GameConfig, type GameState, weekIndexOf } from './state';
 import { beginWeek, ensureCalendars } from './week';
 import { aiMakeEntries, estimateLevel } from '../ai/ai';
 import { clampOr } from '../stats/rating';
@@ -250,6 +250,17 @@ export function createGame(o: NewGameOptions): GameState {
   ensureCalendars(g);
   aiMakeEntries(g, true);
   beginWeek(g);
+  addInbox(g, {
+    kind: 'info',
+    title: `Willkommen bei ${g.stables.player!.name}`,
+    body:
+      `Dein Stall hat ${config.playerHorses} Pferde im Training. So geht es los:\n` +
+      '1. Im Stall die Pferde ansehen – die Werte sind Schätzungen deines Trainers.\n' +
+      '2. Im Rennkalender passende Rennen suchen und nennen (Nennschluss beachten).\n' +
+      '3. In der Rennwoche unter „Renntag“ Taktik und Jockey festlegen.\n' +
+      '4. „Woche abschließen“ – danach Rennansicht, Ergebnis und Sectionals ansehen.\n' +
+      'Erst nach drei Starts bekommt ein Pferd ein Official Rating und darf in Handicaps laufen.',
+  });
   return g;
 }
 

@@ -1,0 +1,359 @@
+{
+  "note": "Ordnet Fellfarbe, Pose und Altersstufe einer Bilddatei zu. file = null bedeutet: noch nicht generiert, die UI zeigt einen SVG-Platzhalter. Pfade relativ zum Projektstamm; beim Einbinden nach public/ kopieren.",
+  "version": 1,
+  "coats": [
+    "bay",
+    "chestnut",
+    "black",
+    "grey",
+    "brown"
+  ],
+  "poses": [
+    "profile",
+    "gallop"
+  ],
+  "posesPlanned": [
+    "three_quarter"
+  ],
+  "ages": [
+    "foal",
+    "adult"
+  ],
+  "horses": [
+    {
+      "coat": "bay",
+      "pose": "profile",
+      "age": "foal",
+      "file": null,
+      "promptId": "horse_bay_profile_foal"
+    },
+    {
+      "coat": "bay",
+      "pose": "profile",
+      "age": "adult",
+      "file": null,
+      "promptId": "horse_bay_profile_adult"
+    },
+    {
+      "coat": "bay",
+      "pose": "gallop",
+      "age": "foal",
+      "file": null,
+      "promptId": "horse_bay_gallop_foal"
+    },
+    {
+      "coat": "bay",
+      "pose": "gallop",
+      "age": "adult",
+      "file": null,
+      "promptId": "horse_bay_gallop_adult"
+    },
+    {
+      "coat": "chestnut",
+      "pose": "profile",
+      "age": "foal",
+      "file": null,
+      "promptId": "horse_chestnut_profile_foal"
+    },
+    {
+      "coat": "chestnut",
+      "pose": "profile",
+      "age": "adult",
+      "file": null,
+      "promptId": "horse_chestnut_profile_adult"
+    },
+    {
+      "coat": "chestnut",
+      "pose": "gallop",
+      "age": "foal",
+      "file": null,
+      "promptId": "horse_chestnut_gallop_foal"
+    },
+    {
+      "coat": "chestnut",
+      "pose": "gallop",
+      "age": "adult",
+      "file": null,
+      "promptId": "horse_chestnut_gallop_adult"
+    },
+    {
+      "coat": "black",
+      "pose": "profile",
+      "age": "foal",
+      "file": null,
+      "promptId": "horse_black_profile_foal"
+    },
+    {
+      "coat": "black",
+      "pose": "profile",
+      "age": "adult",
+      "file": null,
+      "promptId": "horse_black_profile_adult"
+    },
+    {
+      "coat": "black",
+      "pose": "gallop",
+      "age": "foal",
+      "file": null,
+      "promptId": "horse_black_gallop_foal"
+    },
+    {
+      "coat": "black",
+      "pose": "gallop",
+      "age": "adult",
+      "file": null,
+      "promptId": "horse_black_gallop_adult"
+    },
+    {
+      "coat": "grey",
+      "pose": "profile",
+      "age": "foal",
+      "file": null,
+      "promptId": "horse_grey_profile_foal"
+    },
+    {
+      "coat": "grey",
+      "pose": "profile",
+      "age": "adult",
+      "file": null,
+      "promptId": "horse_grey_profile_adult"
+    },
+    {
+      "coat": "grey",
+      "pose": "gallop",
+      "age": "foal",
+      "file": null,
+      "promptId": "horse_grey_gallop_foal"
+    },
+    {
+      "coat": "grey",
+      "pose": "gallop",
+      "age": "adult",
+      "file": null,
+      "promptId": "horse_grey_gallop_adult"
+    },
+    {
+      "coat": "brown",
+      "pose": "profile",
+      "age": "foal",
+      "file": null,
+      "promptId": "horse_brown_profile_foal"
+    },
+    {
+      "coat": "brown",
+      "pose": "profile",
+      "age": "adult",
+      "file": null,
+      "promptId": "horse_brown_profile_adult"
+    },
+    {
+      "coat": "brown",
+      "pose": "gallop",
+      "age": "foal",
+      "file": null,
+      "promptId": "horse_brown_gallop_foal"
+    },
+    {
+      "coat": "brown",
+      "pose": "gallop",
+      "age": "adult",
+      "file": null,
+      "promptId": "horse_brown_gallop_adult"
+    }
+  ],
+  "markings": [
+    {
+      "id": "marking_star",
+      "file": null
+    },
+    {
+      "id": "marking_blaze",
+      "file": null
+    },
+    {
+      "id": "marking_stripe",
+      "file": null
+    },
+    {
+      "id": "marking_sock_front",
+      "file": null
+    },
+    {
+      "id": "marking_sock_hind",
+      "file": null
+    }
+  ],
+  "jockey": {
+    "profile": null,
+    "gallop": null,
+    "mask": null,
+    "maskLevels": {
+      "body": 64,
+      "pattern": 128,
+      "sleeves": 192,
+      "cap": 255
+    }
+  },
+  "staff": [
+    {
+      "id": "trainer_1",
+      "file": null
+    },
+    {
+      "id": "trainer_2",
+      "file": null
+    },
+    {
+      "id": "trainer_3",
+      "file": null
+    },
+    {
+      "id": "trainer_4",
+      "file": null
+    },
+    {
+      "id": "jockey_1",
+      "file": null
+    },
+    {
+      "id": "jockey_2",
+      "file": null
+    },
+    {
+      "id": "jockey_3",
+      "file": null
+    },
+    {
+      "id": "jockey_4",
+      "file": null
+    },
+    {
+      "id": "work_rider",
+      "file": null
+    },
+    {
+      "id": "groom_1",
+      "file": null
+    },
+    {
+      "id": "groom_2",
+      "file": null
+    },
+    {
+      "id": "vet",
+      "file": null
+    },
+    {
+      "id": "farrier",
+      "file": null
+    },
+    {
+      "id": "stud_manager",
+      "file": null
+    },
+    {
+      "id": "bloodstock_agent",
+      "file": null
+    },
+    {
+      "id": "analyst",
+      "file": null
+    }
+  ],
+  "courses": [
+    {
+      "id": "ascot",
+      "file": null
+    },
+    {
+      "id": "epsom",
+      "file": null
+    },
+    {
+      "id": "newmarket",
+      "file": null
+    },
+    {
+      "id": "york",
+      "file": null
+    },
+    {
+      "id": "goodwood",
+      "file": null
+    },
+    {
+      "id": "cheltenham",
+      "file": null
+    },
+    {
+      "id": "doncaster",
+      "file": null
+    },
+    {
+      "id": "sandown",
+      "file": null
+    }
+  ],
+  "misc": [
+    {
+      "id": "yard_level_1",
+      "file": null
+    },
+    {
+      "id": "yard_level_2",
+      "file": null
+    },
+    {
+      "id": "yard_level_3",
+      "file": null
+    },
+    {
+      "id": "gallops",
+      "file": null
+    },
+    {
+      "id": "equine_pool",
+      "file": null
+    },
+    {
+      "id": "vet_clinic",
+      "file": null
+    },
+    {
+      "id": "stud_paddocks",
+      "file": null
+    },
+    {
+      "id": "ui_office",
+      "file": null
+    },
+    {
+      "id": "ui_parchment",
+      "file": null
+    },
+    {
+      "id": "poster_2000_guineas",
+      "file": null
+    },
+    {
+      "id": "poster_1000_guineas",
+      "file": null
+    },
+    {
+      "id": "poster_derby",
+      "file": null
+    },
+    {
+      "id": "poster_oaks",
+      "file": null
+    },
+    {
+      "id": "poster_st_leger",
+      "file": null
+    },
+    {
+      "id": "poster_king_george",
+      "file": null
+    }
+  ]
+}

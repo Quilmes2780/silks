@@ -5,7 +5,7 @@ import { simulateRace } from '../race/sim';
 import type { Run, Track } from '../types';
 import { computeHorseStats, distBucket, goingGroup } from './horseStats';
 import { updateRating } from './rating';
-import { finishingSpeedPct, PAR_FIGURE, speedFigure } from './speedFigure';
+import { finishingSpeedPct, PAR_FIGURE, speedFigure, standardTime } from './speedFigure';
 
 const tracks = tracksJson.tracks as Track[];
 const newbury = tracks.find((t) => t.id === 'newbury')!;
@@ -75,20 +75,48 @@ function soloTime(q: number, distanceM: number, track: Track, going: 'good' | 's
   }).results[0]!.timeS;
 }
 
+function fieldMeanFigure(q: number, distanceM: number, track: Track): number {
+  const styles = ['front', 'prominent', 'midfield', 'held_up'] as const;
+  const out = simulateRace({
+    seed: 3,
+    distanceM,
+    track,
+    surface: 'turf',
+    going: 'good',
+    randomness: 0,
+    runners: Array.from({ length: 10 }, (_, i) => ({
+      horseId: `f${i}`,
+      attrs: specialisedAttributes(q, distanceM),
+      prefs: { distOptM: distanceM, distRange: 1, going: 0, direction: 0, runStyle: styles[i % 4]! },
+      fitness: 100,
+      freshness: 100,
+      weightLb: 126,
+      stall: i + 1,
+      tactic: { position: 'natural' as const, attack: 'normal' as const, path: 'normal' as const },
+      jockey: { tactics: 0.75, pace: 0.75, finishing: 0.75 },
+    })),
+  });
+  const figs = out.results.map((r) => speedFigure({ timeS: r.timeS, track, surface: 'turf', distanceM, going: 'good', weightLb: 126 }));
+  return figs.reduce((a, b) => a + b, 0) / figs.length;
+}
+
 describe('Speed Figure', () => {
-  it('Referenz-Spezialist der Qualität 65 erreicht die Par-Figure', () => {
+  it('die Standardzeit (Referenzfeld) entspricht der Par-Figure, allein läuft der Par-Spezialist etwas schneller', () => {
     for (const d of [1207, 1609, 2414]) {
-      const t = soloTime(65, d, newbury);
-      expect(speedFigure({ timeS: t, track: newbury, surface: 'turf', distanceM: d, going: 'good', weightLb: 126 })).toBe(PAR_FIGURE);
+      const st = standardTime(newbury, 'turf', d);
+      expect(speedFigure({ timeS: st, track: newbury, surface: 'turf', distanceM: d, going: 'good', weightLb: 126 })).toBe(PAR_FIGURE);
+      const solo = speedFigure({ timeS: soloTime(65, d, newbury), track: newbury, surface: 'turf', distanceM: d, going: 'good', weightLb: 126 });
+      expect(Math.abs(solo - PAR_FIGURE)).toBeLessThanOrEqual(12);
     }
   });
 
-  it('ist über Distanzen vergleichbar (Spezialisten gleicher Qualität ±6 lb)', () => {
+  it('ist über Distanzen vergleichbar (Felder von Spezialisten gleicher Qualität, Spanne ≤ 12 lb)', () => {
     for (const q of [55, 75]) {
-      const figs = [1006, 1207, 1609, 2012, 2414, 3219].map((d) =>
-        speedFigure({ timeS: soloTime(q, d, york), track: york, surface: 'turf', distanceM: d, going: 'good', weightLb: 126 }),
-      );
+      const figs = [1006, 1207, 1609, 2012, 2414, 3219].map((d) => fieldMeanFigure(q, d, york));
       expect(Math.max(...figs) - Math.min(...figs)).toBeLessThanOrEqual(12);
+      // und etwa 2 lb pro Attributpunkt neben dem Par
+      const mean = figs.reduce((a, b) => a + b, 0) / figs.length;
+      expect(Math.abs(mean - (PAR_FIGURE + 2 * (q - 65)))).toBeLessThanOrEqual(6);
     }
   });
 

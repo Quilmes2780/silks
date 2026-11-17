@@ -1,0 +1,748 @@
+{
+  "note": "Prompt-Liste für die Stapelgenerierung mit Higgsfield (Konzept: Asset-Tabelle, ca. 75 Bilder, max. 350 Credits). Jede Gruppe erst nach Freigabe generieren, vorher Kostenlimit setzen.",
+  "style": {
+    "horses": "classical English equestrian portrait, oil on canvas, in the manner of 18th and 19th century British sporting art, warm brown tones, calm muted landscape background, soft natural light, fine visible brushwork, aged varnish, museum quality",
+    "posters": "vintage 1930s British railway and racing poster, bold flat colours, art deco lithograph, strong simple shapes, limited palette, textured paper, elegant serif lettering area left blank",
+    "people": "classical British portrait, oil on canvas, warm brown tones, muted background, soft window light, dignified, half-length, period-neutral modern racing attire, no logos",
+    "negative": "no text, no watermark, no logos, no sponsor branding, no real person likeness, anatomically correct horse, four legs"
+  },
+  "count": 76,
+  "prompts": [
+    {
+      "id": "style_test_1",
+      "group": "Stilfindung",
+      "file": "assets/style/test_1.webp",
+      "size": "1024x1024",
+      "prompt": "bay racehorse in side profile in a green paddock, classical English equestrian portrait, oil on canvas, in the manner of 18th and 19th century British sporting art, warm brown tones, calm muted landscape background, soft natural light, fine visible brushwork, aged varnish, museum quality",
+      "negative": "no text, no watermark, no logos, no sponsor branding, no real person likeness, anatomically correct horse, four legs",
+      "tool": "Bildgenerierung (Kosten pro Bild messen)"
+    },
+    {
+      "id": "style_test_2",
+      "group": "Stilfindung",
+      "file": "assets/style/test_2.webp",
+      "size": "1024x1024",
+      "prompt": "grey racehorse with a groom holding the bridle, classical English equestrian portrait, oil on canvas, in the manner of 18th and 19th century British sporting art, warm brown tones, calm muted landscape background, soft natural light, fine visible brushwork, aged varnish, museum quality",
+      "negative": "no text, no watermark, no logos, no sponsor branding, no real person likeness, anatomically correct horse, four legs",
+      "tool": "Bildgenerierung (Kosten pro Bild messen)"
+    },
+    {
+      "id": "style_test_3",
+      "group": "Stilfindung",
+      "file": "assets/style/test_3.webp",
+      "size": "1024x1024",
+      "prompt": "chestnut racehorse galloping on a grass gallop at dawn, classical English equestrian portrait, oil on canvas, in the manner of 18th and 19th century British sporting art, warm brown tones, calm muted landscape background, soft natural light, fine visible brushwork, aged varnish, museum quality",
+      "negative": "no text, no watermark, no logos, no sponsor branding, no real person likeness, anatomically correct horse, four legs",
+      "tool": "Bildgenerierung (Kosten pro Bild messen)"
+    },
+    {
+      "id": "style_test_4",
+      "group": "Stilfindung",
+      "file": "assets/style/test_4.webp",
+      "size": "1024x1024",
+      "prompt": "two racehorses at the start of a race, jockeys in neutral grey silks, classical English equestrian portrait, oil on canvas, in the manner of 18th and 19th century British sporting art, warm brown tones, calm muted landscape background, soft natural light, fine visible brushwork, aged varnish, museum quality",
+      "negative": "no text, no watermark, no logos, no sponsor branding, no real person likeness, anatomically correct horse, four legs",
+      "tool": "Bildgenerierung (Kosten pro Bild messen)"
+    },
+    {
+      "id": "style_test_5",
+      "group": "Stilfindung",
+      "file": "assets/style/test_5.webp",
+      "size": "1024x1024",
+      "prompt": "racehorse being led around a parade ring, classical English equestrian portrait, oil on canvas, in the manner of 18th and 19th century British sporting art, warm brown tones, calm muted landscape background, soft natural light, fine visible brushwork, aged varnish, museum quality",
+      "negative": "no text, no watermark, no logos, no sponsor branding, no real person likeness, anatomically correct horse, four legs",
+      "tool": "Bildgenerierung (Kosten pro Bild messen)"
+    },
+    {
+      "id": "style_test_6",
+      "group": "Stilfindung",
+      "file": "assets/style/test_6.webp",
+      "size": "1024x1024",
+      "prompt": "mare and foal in an English paddock with oak trees, classical English equestrian portrait, oil on canvas, in the manner of 18th and 19th century British sporting art, warm brown tones, calm muted landscape background, soft natural light, fine visible brushwork, aged varnish, museum quality",
+      "negative": "no text, no watermark, no logos, no sponsor branding, no real person likeness, anatomically correct horse, four legs",
+      "tool": "Bildgenerierung (Kosten pro Bild messen)"
+    },
+    {
+      "id": "style_test_7",
+      "group": "Stilfindung",
+      "file": "assets/style/test_7.webp",
+      "size": "1024x1024",
+      "prompt": "racehorse head study, three-quarter view, classical English equestrian portrait, oil on canvas, in the manner of 18th and 19th century British sporting art, warm brown tones, calm muted landscape background, soft natural light, fine visible brushwork, aged varnish, museum quality",
+      "negative": "no text, no watermark, no logos, no sponsor branding, no real person likeness, anatomically correct horse, four legs",
+      "tool": "Bildgenerierung (Kosten pro Bild messen)"
+    },
+    {
+      "id": "style_test_poster_1",
+      "group": "Stilfindung",
+      "file": "assets/style/poster_1.webp",
+      "size": "1536x1024",
+      "prompt": "English racecourse grandstand with horses racing past the winning post, vintage 1930s British railway and racing poster, bold flat colours, art deco lithograph, strong simple shapes, limited palette, textured paper, elegant serif lettering area left blank",
+      "negative": "no text, no watermark, no logos, no sponsor branding, no real person likeness, anatomically correct horse, four legs",
+      "tool": "Bildgenerierung"
+    },
+    {
+      "id": "style_test_poster_2",
+      "group": "Stilfindung",
+      "file": "assets/style/poster_2.webp",
+      "size": "1024x1536",
+      "prompt": "a single racehorse and jockey in silhouette against a large setting sun, vintage 1930s British railway and racing poster, bold flat colours, art deco lithograph, strong simple shapes, limited palette, textured paper, elegant serif lettering area left blank",
+      "negative": "no text, no watermark, no logos, no sponsor branding, no real person likeness, anatomically correct horse, four legs",
+      "tool": "Bildgenerierung"
+    },
+    {
+      "id": "horse_bay_profile_foal",
+      "group": "Pferde-Basisporträts",
+      "file": "assets/horses/bay_profile_foal.webp",
+      "size": "1024x1024",
+      "prompt": "bay thoroughbred with black mane, tail and lower legs, young foal with long legs and fluffy short mane, in a paddock, standing in strict side profile facing right, full body visible, conformation portrait, no white markings, no saddle, no rider, classical English equestrian portrait, oil on canvas, in the manner of 18th and 19th century British sporting art, warm brown tones, calm muted landscape background, soft natural light, fine visible brushwork, aged varnish, museum quality",
+      "negative": "no text, no watermark, no logos, no sponsor branding, no real person likeness, anatomically correct horse, four legs, white face markings, white socks, saddle, rider",
+      "tool": "Bildgenerierung mit Referenzbildern",
+      "notes": "Ohne Abzeichen generieren; Abzeichen kommen als Ebenen darüber."
+    },
+    {
+      "id": "horse_bay_profile_adult",
+      "group": "Pferde-Basisporträts",
+      "file": "assets/horses/bay_profile_adult.webp",
+      "size": "1024x1024",
+      "prompt": "bay thoroughbred with black mane, tail and lower legs, mature racehorse in peak condition, muscular and lean, standing in strict side profile facing right, full body visible, conformation portrait, no white markings, no saddle, no rider, classical English equestrian portrait, oil on canvas, in the manner of 18th and 19th century British sporting art, warm brown tones, calm muted landscape background, soft natural light, fine visible brushwork, aged varnish, museum quality",
+      "negative": "no text, no watermark, no logos, no sponsor branding, no real person likeness, anatomically correct horse, four legs, white face markings, white socks, saddle, rider",
+      "tool": "Bildgenerierung mit Referenzbildern",
+      "notes": "Ohne Abzeichen generieren; Abzeichen kommen als Ebenen darüber."
+    },
+    {
+      "id": "horse_bay_gallop_foal",
+      "group": "Pferde-Basisporträts",
+      "file": "assets/horses/bay_gallop_foal.webp",
+      "size": "1024x1024",
+      "prompt": "bay thoroughbred with black mane, tail and lower legs, young foal with long legs and fluffy short mane, in a paddock, playfully cantering in a paddock facing right, no white markings, no saddle, no rider, classical English equestrian portrait, oil on canvas, in the manner of 18th and 19th century British sporting art, warm brown tones, calm muted landscape background, soft natural light, fine visible brushwork, aged varnish, museum quality",
+      "negative": "no text, no watermark, no logos, no sponsor branding, no real person likeness, anatomically correct horse, four legs, white face markings, white socks, saddle, rider",
+      "tool": "Bildgenerierung mit Referenzbildern",
+      "notes": "Ohne Abzeichen generieren; Abzeichen kommen als Ebenen darüber."
+    },
+    {
+      "id": "horse_bay_gallop_adult",
+      "group": "Pferde-Basisporträts",
+      "file": "assets/horses/bay_gallop_adult.webp",
+      "size": "1024x1024",
+      "prompt": "bay thoroughbred with black mane, tail and lower legs, mature racehorse in peak condition, muscular and lean, in full gallop facing right, all four legs extended in the classic flying gallop of sporting art, no white markings, no saddle, no rider, classical English equestrian portrait, oil on canvas, in the manner of 18th and 19th century British sporting art, warm brown tones, calm muted landscape background, soft natural light, fine visible brushwork, aged varnish, museum quality",
+      "negative": "no text, no watermark, no logos, no sponsor branding, no real person likeness, anatomically correct horse, four legs, white face markings, white socks, saddle, rider",
+      "tool": "Bildgenerierung mit Referenzbildern",
+      "notes": "Ohne Abzeichen generieren; Abzeichen kommen als Ebenen darüber."
+    },
+    {
+      "id": "horse_chestnut_profile_foal",
+      "group": "Pferde-Basisporträts",
+      "file": "assets/horses/chestnut_profile_foal.webp",
+      "size": "1024x1024",
+      "prompt": "chestnut thoroughbred with copper-red coat and matching mane, young foal with long legs and fluffy short mane, in a paddock, standing in strict side profile facing right, full body visible, conformation portrait, no white markings, no saddle, no rider, classical English equestrian portrait, oil on canvas, in the manner of 18th and 19th century British sporting art, warm brown tones, calm muted landscape background, soft natural light, fine visible brushwork, aged varnish, museum quality",
+      "negative": "no text, no watermark, no logos, no sponsor branding, no real person likeness, anatomically correct horse, four legs, white face markings, white socks, saddle, rider",
+      "tool": "Bildgenerierung mit Referenzbildern",
+      "notes": "Ohne Abzeichen generieren; Abzeichen kommen als Ebenen darüber."
+    },
+    {
+      "id": "horse_chestnut_profile_adult",
+      "group": "Pferde-Basisporträts",
+      "file": "assets/horses/chestnut_profile_adult.webp",
+      "size": "1024x1024",
+      "prompt": "chestnut thoroughbred with copper-red coat and matching mane, mature racehorse in peak condition, muscular and lean, standing in strict side profile facing right, full body visible, conformation portrait, no white markings, no saddle, no rider, classical English equestrian portrait, oil on canvas, in the manner of 18th and 19th century British sporting art, warm brown tones, calm muted landscape background, soft natural light, fine visible brushwork, aged varnish, museum quality",
+      "negative": "no text, no watermark, no logos, no sponsor branding, no real person likeness, anatomically correct horse, four legs, white face markings, white socks, saddle, rider",
+      "tool": "Bildgenerierung mit Referenzbildern",
+      "notes": "Ohne Abzeichen generieren; Abzeichen kommen als Ebenen darüber."
+    },
+    {
+      "id": "horse_chestnut_gallop_foal",
+      "group": "Pferde-Basisporträts",
+      "file": "assets/horses/chestnut_gallop_foal.webp",
+      "size": "1024x1024",
+      "prompt": "chestnut thoroughbred with copper-red coat and matching mane, young foal with long legs and fluffy short mane, in a paddock, playfully cantering in a paddock facing right, no white markings, no saddle, no rider, classical English equestrian portrait, oil on canvas, in the manner of 18th and 19th century British sporting art, warm brown tones, calm muted landscape background, soft natural light, fine visible brushwork, aged varnish, museum quality",
+      "negative": "no text, no watermark, no logos, no sponsor branding, no real person likeness, anatomically correct horse, four legs, white face markings, white socks, saddle, rider",
+      "tool": "Bildgenerierung mit Referenzbildern",
+      "notes": "Ohne Abzeichen generieren; Abzeichen kommen als Ebenen darüber."
+    },
+    {
+      "id": "horse_chestnut_gallop_adult",
+      "group": "Pferde-Basisporträts",
+      "file": "assets/horses/chestnut_gallop_adult.webp",
+      "size": "1024x1024",
+      "prompt": "chestnut thoroughbred with copper-red coat and matching mane, mature racehorse in peak condition, muscular and lean, in full gallop facing right, all four legs extended in the classic flying gallop of sporting art, no white markings, no saddle, no rider, classical English equestrian portrait, oil on canvas, in the manner of 18th and 19th century British sporting art, warm brown tones, calm muted landscape background, soft natural light, fine visible brushwork, aged varnish, museum quality",
+      "negative": "no text, no watermark, no logos, no sponsor branding, no real person likeness, anatomically correct horse, four legs, white face markings, white socks, saddle, rider",
+      "tool": "Bildgenerierung mit Referenzbildern",
+      "notes": "Ohne Abzeichen generieren; Abzeichen kommen als Ebenen darüber."
+    },
+    {
+      "id": "horse_black_profile_foal",
+      "group": "Pferde-Basisporträts",
+      "file": "assets/horses/black_profile_foal.webp",
+      "size": "1024x1024",
+      "prompt": "black thoroughbred with glossy jet coat, young foal with long legs and fluffy short mane, in a paddock, standing in strict side profile facing right, full body visible, conformation portrait, no white markings, no saddle, no rider, classical English equestrian portrait, oil on canvas, in the manner of 18th and 19th century British sporting art, warm brown tones, calm muted landscape background, soft natural light, fine visible brushwork, aged varnish, museum quality",
+      "negative": "no text, no watermark, no logos, no sponsor branding, no real person likeness, anatomically correct horse, four legs, white face markings, white socks, saddle, rider",
+      "tool": "Bildgenerierung mit Referenzbildern",
+      "notes": "Ohne Abzeichen generieren; Abzeichen kommen als Ebenen darüber."
+    },
+    {
+      "id": "horse_black_profile_adult",
+      "group": "Pferde-Basisporträts",
+      "file": "assets/horses/black_profile_adult.webp",
+      "size": "1024x1024",
+      "prompt": "black thoroughbred with glossy jet coat, mature racehorse in peak condition, muscular and lean, standing in strict side profile facing right, full body visible, conformation portrait, no white markings, no saddle, no rider, classical English equestrian portrait, oil on canvas, in the manner of 18th and 19th century British sporting art, warm brown tones, calm muted landscape background, soft natural light, fine visible brushwork, aged varnish, museum quality",
+      "negative": "no text, no watermark, no logos, no sponsor branding, no real person likeness, anatomically correct horse, four legs, white face markings, white socks, saddle, rider",
+      "tool": "Bildgenerierung mit Referenzbildern",
+      "notes": "Ohne Abzeichen generieren; Abzeichen kommen als Ebenen darüber."
+    },
+    {
+      "id": "horse_black_gallop_foal",
+      "group": "Pferde-Basisporträts",
+      "file": "assets/horses/black_gallop_foal.webp",
+      "size": "1024x1024",
+      "prompt": "black thoroughbred with glossy jet coat, young foal with long legs and fluffy short mane, in a paddock, playfully cantering in a paddock facing right, no white markings, no saddle, no rider, classical English equestrian portrait, oil on canvas, in the manner of 18th and 19th century British sporting art, warm brown tones, calm muted landscape background, soft natural light, fine visible brushwork, aged varnish, museum quality",
+      "negative": "no text, no watermark, no logos, no sponsor branding, no real person likeness, anatomically correct horse, four legs, white face markings, white socks, saddle, rider",
+      "tool": "Bildgenerierung mit Referenzbildern",
+      "notes": "Ohne Abzeichen generieren; Abzeichen kommen als Ebenen darüber."
+    },
+    {
+      "id": "horse_black_gallop_adult",
+      "group": "Pferde-Basisporträts",
+      "file": "assets/horses/black_gallop_adult.webp",
+      "size": "1024x1024",
+      "prompt": "black thoroughbred with glossy jet coat, mature racehorse in peak condition, muscular and lean, in full gallop facing right, all four legs extended in the classic flying gallop of sporting art, no white markings, no saddle, no rider, classical English equestrian portrait, oil on canvas, in the manner of 18th and 19th century British sporting art, warm brown tones, calm muted landscape background, soft natural light, fine visible brushwork, aged varnish, museum quality",
+      "negative": "no text, no watermark, no logos, no sponsor branding, no real person likeness, anatomically correct horse, four legs, white face markings, white socks, saddle, rider",
+      "tool": "Bildgenerierung mit Referenzbildern",
+      "notes": "Ohne Abzeichen generieren; Abzeichen kommen als Ebenen darüber."
+    },
+    {
+      "id": "horse_grey_profile_foal",
+      "group": "Pferde-Basisporträts",
+      "file": "assets/horses/grey_profile_foal.webp",
+      "size": "1024x1024",
+      "prompt": "grey thoroughbred with dappled silver-white coat, young foal with long legs and fluffy short mane, in a paddock, standing in strict side profile facing right, full body visible, conformation portrait, no white markings, no saddle, no rider, classical English equestrian portrait, oil on canvas, in the manner of 18th and 19th century British sporting art, warm brown tones, calm muted landscape background, soft natural light, fine visible brushwork, aged varnish, museum quality",
+      "negative": "no text, no watermark, no logos, no sponsor branding, no real person likeness, anatomically correct horse, four legs, white face markings, white socks, saddle, rider",
+      "tool": "Bildgenerierung mit Referenzbildern",
+      "notes": "Ohne Abzeichen generieren; Abzeichen kommen als Ebenen darüber."
+    },
+    {
+      "id": "horse_grey_profile_adult",
+      "group": "Pferde-Basisporträts",
+      "file": "assets/horses/grey_profile_adult.webp",
+      "size": "1024x1024",
+      "prompt": "grey thoroughbred with dappled silver-white coat, mature racehorse in peak condition, muscular and lean, standing in strict side profile facing right, full body visible, conformation portrait, no white markings, no saddle, no rider, classical English equestrian portrait, oil on canvas, in the manner of 18th and 19th century British sporting art, warm brown tones, calm muted landscape background, soft natural light, fine visible brushwork, aged varnish, museum quality",
+      "negative": "no text, no watermark, no logos, no sponsor branding, no real person likeness, anatomically correct horse, four legs, white face markings, white socks, saddle, rider",
+      "tool": "Bildgenerierung mit Referenzbildern",
+      "notes": "Ohne Abzeichen generieren; Abzeichen kommen als Ebenen darüber."
+    },
+    {
+      "id": "horse_grey_gallop_foal",
+      "group": "Pferde-Basisporträts",
+      "file": "assets/horses/grey_gallop_foal.webp",
+      "size": "1024x1024",
+      "prompt": "grey thoroughbred with dappled silver-white coat, young foal with long legs and fluffy short mane, in a paddock, playfully cantering in a paddock facing right, no white markings, no saddle, no rider, classical English equestrian portrait, oil on canvas, in the manner of 18th and 19th century British sporting art, warm brown tones, calm muted landscape background, soft natural light, fine visible brushwork, aged varnish, museum quality",
+      "negative": "no text, no watermark, no logos, no sponsor branding, no real person likeness, anatomically correct horse, four legs, white face markings, white socks, saddle, rider",
+      "tool": "Bildgenerierung mit Referenzbildern",
+      "notes": "Ohne Abzeichen generieren; Abzeichen kommen als Ebenen darüber."
+    },
+    {
+      "id": "horse_grey_gallop_adult",
+      "group": "Pferde-Basisporträts",
+      "file": "assets/horses/grey_gallop_adult.webp",
+      "size": "1024x1024",
+      "prompt": "grey thoroughbred with dappled silver-white coat, mature racehorse in peak condition, muscular and lean, in full gallop facing right, all four legs extended in the classic flying gallop of sporting art, no white markings, no saddle, no rider, classical English equestrian portrait, oil on canvas, in the manner of 18th and 19th century British sporting art, warm brown tones, calm muted landscape background, soft natural light, fine visible brushwork, aged varnish, museum quality",
+      "negative": "no text, no watermark, no logos, no sponsor branding, no real person likeness, anatomically correct horse, four legs, white face markings, white socks, saddle, rider",
+      "tool": "Bildgenerierung mit Referenzbildern",
+      "notes": "Ohne Abzeichen generieren; Abzeichen kommen als Ebenen darüber."
+    },
+    {
+      "id": "horse_brown_profile_foal",
+      "group": "Pferde-Basisporträts",
+      "file": "assets/horses/brown_profile_foal.webp",
+      "size": "1024x1024",
+      "prompt": "dark brown thoroughbred, almost black with brown muzzle, young foal with long legs and fluffy short mane, in a paddock, standing in strict side profile facing right, full body visible, conformation portrait, no white markings, no saddle, no rider, classical English equestrian portrait, oil on canvas, in the manner of 18th and 19th century British sporting art, warm brown tones, calm muted landscape background, soft natural light, fine visible brushwork, aged varnish, museum quality",
+      "negative": "no text, no watermark, no logos, no sponsor branding, no real person likeness, anatomically correct horse, four legs, white face markings, white socks, saddle, rider",
+      "tool": "Bildgenerierung mit Referenzbildern",
+      "notes": "Ohne Abzeichen generieren; Abzeichen kommen als Ebenen darüber."
+    },
+    {
+      "id": "horse_brown_profile_adult",
+      "group": "Pferde-Basisporträts",
+      "file": "assets/horses/brown_profile_adult.webp",
+      "size": "1024x1024",
+      "prompt": "dark brown thoroughbred, almost black with brown muzzle, mature racehorse in peak condition, muscular and lean, standing in strict side profile facing right, full body visible, conformation portrait, no white markings, no saddle, no rider, classical English equestrian portrait, oil on canvas, in the manner of 18th and 19th century British sporting art, warm brown tones, calm muted landscape background, soft natural light, fine visible brushwork, aged varnish, museum quality",
+      "negative": "no text, no watermark, no logos, no sponsor branding, no real person likeness, anatomically correct horse, four legs, white face markings, white socks, saddle, rider",
+      "tool": "Bildgenerierung mit Referenzbildern",
+      "notes": "Ohne Abzeichen generieren; Abzeichen kommen als Ebenen darüber."
+    },
+    {
+      "id": "horse_brown_gallop_foal",
+      "group": "Pferde-Basisporträts",
+      "file": "assets/horses/brown_gallop_foal.webp",
+      "size": "1024x1024",
+      "prompt": "dark brown thoroughbred, almost black with brown muzzle, young foal with long legs and fluffy short mane, in a paddock, playfully cantering in a paddock facing right, no white markings, no saddle, no rider, classical English equestrian portrait, oil on canvas, in the manner of 18th and 19th century British sporting art, warm brown tones, calm muted landscape background, soft natural light, fine visible brushwork, aged varnish, museum quality",
+      "negative": "no text, no watermark, no logos, no sponsor branding, no real person likeness, anatomically correct horse, four legs, white face markings, white socks, saddle, rider",
+      "tool": "Bildgenerierung mit Referenzbildern",
+      "notes": "Ohne Abzeichen generieren; Abzeichen kommen als Ebenen darüber."
+    },
+    {
+      "id": "horse_brown_gallop_adult",
+      "group": "Pferde-Basisporträts",
+      "file": "assets/horses/brown_gallop_adult.webp",
+      "size": "1024x1024",
+      "prompt": "dark brown thoroughbred, almost black with brown muzzle, mature racehorse in peak condition, muscular and lean, in full gallop facing right, all four legs extended in the classic flying gallop of sporting art, no white markings, no saddle, no rider, classical English equestrian portrait, oil on canvas, in the manner of 18th and 19th century British sporting art, warm brown tones, calm muted landscape background, soft natural light, fine visible brushwork, aged varnish, museum quality",
+      "negative": "no text, no watermark, no logos, no sponsor branding, no real person likeness, anatomically correct horse, four legs, white face markings, white socks, saddle, rider",
+      "tool": "Bildgenerierung mit Referenzbildern",
+      "notes": "Ohne Abzeichen generieren; Abzeichen kommen als Ebenen darüber."
+    },
+    {
+      "id": "marking_star",
+      "group": "Abzeichen und Silks",
+      "file": "assets/markings/star.webp",
+      "size": "1024x1024",
+      "prompt": "isolated small white star on the forehead painted as an overlay layer for a bay horse in side profile facing right, matching the oil painting style, transparent background, classical English equestrian portrait, oil on canvas, in the manner of 18th and 19th century British sporting art, warm brown tones, calm muted landscape background, soft natural light, fine visible brushwork, aged varnish, museum quality",
+      "negative": "no text, no watermark, no logos, no sponsor branding, no real person likeness, anatomically correct horse, four legs",
+      "tool": "Bildgenerierung, Hintergrund entfernen",
+      "notes": "Freistellen; muss passgenau über den Profil-Basisporträts liegen."
+    },
+    {
+      "id": "marking_blaze",
+      "group": "Abzeichen und Silks",
+      "file": "assets/markings/blaze.webp",
+      "size": "1024x1024",
+      "prompt": "isolated broad white blaze running down the face painted as an overlay layer for a bay horse in side profile facing right, matching the oil painting style, transparent background, classical English equestrian portrait, oil on canvas, in the manner of 18th and 19th century British sporting art, warm brown tones, calm muted landscape background, soft natural light, fine visible brushwork, aged varnish, museum quality",
+      "negative": "no text, no watermark, no logos, no sponsor branding, no real person likeness, anatomically correct horse, four legs",
+      "tool": "Bildgenerierung, Hintergrund entfernen",
+      "notes": "Freistellen; muss passgenau über den Profil-Basisporträts liegen."
+    },
+    {
+      "id": "marking_stripe",
+      "group": "Abzeichen und Silks",
+      "file": "assets/markings/stripe.webp",
+      "size": "1024x1024",
+      "prompt": "isolated narrow white stripe down the face painted as an overlay layer for a bay horse in side profile facing right, matching the oil painting style, transparent background, classical English equestrian portrait, oil on canvas, in the manner of 18th and 19th century British sporting art, warm brown tones, calm muted landscape background, soft natural light, fine visible brushwork, aged varnish, museum quality",
+      "negative": "no text, no watermark, no logos, no sponsor branding, no real person likeness, anatomically correct horse, four legs",
+      "tool": "Bildgenerierung, Hintergrund entfernen",
+      "notes": "Freistellen; muss passgenau über den Profil-Basisporträts liegen."
+    },
+    {
+      "id": "marking_sock_front",
+      "group": "Abzeichen und Silks",
+      "file": "assets/markings/sock_front.webp",
+      "size": "1024x1024",
+      "prompt": "isolated white sock on a front leg up to the fetlock painted as an overlay layer for a bay horse in side profile facing right, matching the oil painting style, transparent background, classical English equestrian portrait, oil on canvas, in the manner of 18th and 19th century British sporting art, warm brown tones, calm muted landscape background, soft natural light, fine visible brushwork, aged varnish, museum quality",
+      "negative": "no text, no watermark, no logos, no sponsor branding, no real person likeness, anatomically correct horse, four legs",
+      "tool": "Bildgenerierung, Hintergrund entfernen",
+      "notes": "Freistellen; muss passgenau über den Profil-Basisporträts liegen."
+    },
+    {
+      "id": "marking_sock_hind",
+      "group": "Abzeichen und Silks",
+      "file": "assets/markings/sock_hind.webp",
+      "size": "1024x1024",
+      "prompt": "isolated white sock on a hind leg up to the fetlock painted as an overlay layer for a bay horse in side profile facing right, matching the oil painting style, transparent background, classical English equestrian portrait, oil on canvas, in the manner of 18th and 19th century British sporting art, warm brown tones, calm muted landscape background, soft natural light, fine visible brushwork, aged varnish, museum quality",
+      "negative": "no text, no watermark, no logos, no sponsor branding, no real person likeness, anatomically correct horse, four legs",
+      "tool": "Bildgenerierung, Hintergrund entfernen",
+      "notes": "Freistellen; muss passgenau über den Profil-Basisporträts liegen."
+    },
+    {
+      "id": "jockey_silks_profile",
+      "group": "Abzeichen und Silks",
+      "file": "assets/jockey/silks_profile.webp",
+      "size": "1024x1024",
+      "prompt": "jockey seated on a racehorse in side profile facing right, jockey wearing plain neutral mid-grey racing silks and grey cap, white breeches, black boots, silks evenly lit so they can be recoloured, classical English equestrian portrait, oil on canvas, in the manner of 18th and 19th century British sporting art, warm brown tones, calm muted landscape background, soft natural light, fine visible brushwork, aged varnish, museum quality",
+      "negative": "no text, no watermark, no logos, no sponsor branding, no real person likeness, anatomically correct horse, four legs, coloured silks, patterns, numbers",
+      "tool": "Bildgenerierung, Hintergrund entfernen",
+      "notes": "Graustufen-Silks; Einfärbung im Browser über Maske (siehe src/ui/silks/colorize.ts)."
+    },
+    {
+      "id": "jockey_silks_gallop",
+      "group": "Abzeichen und Silks",
+      "file": "assets/jockey/silks_gallop.webp",
+      "size": "1024x1024",
+      "prompt": "jockey crouched in racing position on a galloping racehorse facing right, plain neutral mid-grey racing silks and grey cap, classical English equestrian portrait, oil on canvas, in the manner of 18th and 19th century British sporting art, warm brown tones, calm muted landscape background, soft natural light, fine visible brushwork, aged varnish, museum quality",
+      "negative": "no text, no watermark, no logos, no sponsor branding, no real person likeness, anatomically correct horse, four legs, coloured silks, patterns, numbers",
+      "tool": "Bildgenerierung, Hintergrund entfernen",
+      "notes": "Graustufen-Silks für die Einfärbung."
+    },
+    {
+      "id": "jockey_silks_mask",
+      "group": "Abzeichen und Silks",
+      "file": "assets/jockey/silks_mask.png",
+      "size": "1024x1024",
+      "prompt": "flat region mask derived from jockey_silks_profile: body 25% grey, pattern area 50% grey, sleeves 75% grey, cap white, everything else black (manually prepared from the generated image)",
+      "negative": "",
+      "tool": "manuell aus dem generierten Bild erstellen (kein Credit)",
+      "notes": "Grauwerte 64/128/192/255 entsprechen body/pattern/sleeves/cap."
+    },
+    {
+      "id": "staff_trainer_1",
+      "group": "Personal-Porträts",
+      "file": "assets/staff/trainer_1.webp",
+      "size": "1024x1024",
+      "prompt": "head trainer, weathered man in his sixties in a tweed jacket and flat cap, holding binoculars, classical British portrait, oil on canvas, warm brown tones, muted background, soft window light, dignified, half-length, period-neutral modern racing attire, no logos",
+      "negative": "no text, no watermark, no logos, no sponsor branding, no real person likeness, anatomically correct horse, four legs",
+      "tool": "Bildgenerierung im Stapel",
+      "notes": "Generisch, mehrfach verwendbar; keine realen Personen."
+    },
+    {
+      "id": "staff_trainer_2",
+      "group": "Personal-Porträts",
+      "file": "assets/staff/trainer_2.webp",
+      "size": "1024x1024",
+      "prompt": "head trainer, woman in her forties in a waxed jacket, confident expression, stable yard behind, classical British portrait, oil on canvas, warm brown tones, muted background, soft window light, dignified, half-length, period-neutral modern racing attire, no logos",
+      "negative": "no text, no watermark, no logos, no sponsor branding, no real person likeness, anatomically correct horse, four legs",
+      "tool": "Bildgenerierung im Stapel",
+      "notes": "Generisch, mehrfach verwendbar; keine realen Personen."
+    },
+    {
+      "id": "staff_trainer_3",
+      "group": "Personal-Porträts",
+      "file": "assets/staff/trainer_3.webp",
+      "size": "1024x1024",
+      "prompt": "young assistant trainer in a quilted gilet with a clipboard, classical British portrait, oil on canvas, warm brown tones, muted background, soft window light, dignified, half-length, period-neutral modern racing attire, no logos",
+      "negative": "no text, no watermark, no logos, no sponsor branding, no real person likeness, anatomically correct horse, four legs",
+      "tool": "Bildgenerierung im Stapel",
+      "notes": "Generisch, mehrfach verwendbar; keine realen Personen."
+    },
+    {
+      "id": "staff_trainer_4",
+      "group": "Personal-Porträts",
+      "file": "assets/staff/trainer_4.webp",
+      "size": "1024x1024",
+      "prompt": "elderly trainer with grey moustache in a three-piece tweed suit, classical British portrait, oil on canvas, warm brown tones, muted background, soft window light, dignified, half-length, period-neutral modern racing attire, no logos",
+      "negative": "no text, no watermark, no logos, no sponsor branding, no real person likeness, anatomically correct horse, four legs",
+      "tool": "Bildgenerierung im Stapel",
+      "notes": "Generisch, mehrfach verwendbar; keine realen Personen."
+    },
+    {
+      "id": "staff_jockey_1",
+      "group": "Personal-Porträts",
+      "file": "assets/staff/jockey_1.webp",
+      "size": "1024x1024",
+      "prompt": "flat jockey in neutral grey silks holding a helmet, slight build, determined, classical British portrait, oil on canvas, warm brown tones, muted background, soft window light, dignified, half-length, period-neutral modern racing attire, no logos",
+      "negative": "no text, no watermark, no logos, no sponsor branding, no real person likeness, anatomically correct horse, four legs",
+      "tool": "Bildgenerierung im Stapel",
+      "notes": "Generisch, mehrfach verwendbar; keine realen Personen."
+    },
+    {
+      "id": "staff_jockey_2",
+      "group": "Personal-Porträts",
+      "file": "assets/staff/jockey_2.webp",
+      "size": "1024x1024",
+      "prompt": "female flat jockey in neutral grey silks, smiling, helmet under arm, classical British portrait, oil on canvas, warm brown tones, muted background, soft window light, dignified, half-length, period-neutral modern racing attire, no logos",
+      "negative": "no text, no watermark, no logos, no sponsor branding, no real person likeness, anatomically correct horse, four legs",
+      "tool": "Bildgenerierung im Stapel",
+      "notes": "Generisch, mehrfach verwendbar; keine realen Personen."
+    },
+    {
+      "id": "staff_jockey_3",
+      "group": "Personal-Porträts",
+      "file": "assets/staff/jockey_3.webp",
+      "size": "1024x1024",
+      "prompt": "veteran jockey with lined face in neutral grey silks, classical British portrait, oil on canvas, warm brown tones, muted background, soft window light, dignified, half-length, period-neutral modern racing attire, no logos",
+      "negative": "no text, no watermark, no logos, no sponsor branding, no real person likeness, anatomically correct horse, four legs",
+      "tool": "Bildgenerierung im Stapel",
+      "notes": "Generisch, mehrfach verwendbar; keine realen Personen."
+    },
+    {
+      "id": "staff_jockey_4",
+      "group": "Personal-Porträts",
+      "file": "assets/staff/jockey_4.webp",
+      "size": "1024x1024",
+      "prompt": "apprentice jockey, teenager, in neutral grey silks, nervous smile, classical British portrait, oil on canvas, warm brown tones, muted background, soft window light, dignified, half-length, period-neutral modern racing attire, no logos",
+      "negative": "no text, no watermark, no logos, no sponsor branding, no real person likeness, anatomically correct horse, four legs",
+      "tool": "Bildgenerierung im Stapel",
+      "notes": "Generisch, mehrfach verwendbar; keine realen Personen."
+    },
+    {
+      "id": "staff_work_rider",
+      "group": "Personal-Porträts",
+      "file": "assets/staff/work_rider.webp",
+      "size": "1024x1024",
+      "prompt": "work rider in a skull cap and body protector on the gallops at dawn, classical British portrait, oil on canvas, warm brown tones, muted background, soft window light, dignified, half-length, period-neutral modern racing attire, no logos",
+      "negative": "no text, no watermark, no logos, no sponsor branding, no real person likeness, anatomically correct horse, four legs",
+      "tool": "Bildgenerierung im Stapel",
+      "notes": "Generisch, mehrfach verwendbar; keine realen Personen."
+    },
+    {
+      "id": "staff_groom_1",
+      "group": "Personal-Porträts",
+      "file": "assets/staff/groom_1.webp",
+      "size": "1024x1024",
+      "prompt": "stable groom with a horse brush and rolled-up sleeves, classical British portrait, oil on canvas, warm brown tones, muted background, soft window light, dignified, half-length, period-neutral modern racing attire, no logos",
+      "negative": "no text, no watermark, no logos, no sponsor branding, no real person likeness, anatomically correct horse, four legs",
+      "tool": "Bildgenerierung im Stapel",
+      "notes": "Generisch, mehrfach verwendbar; keine realen Personen."
+    },
+    {
+      "id": "staff_groom_2",
+      "group": "Personal-Porträts",
+      "file": "assets/staff/groom_2.webp",
+      "size": "1024x1024",
+      "prompt": "young female groom leading a horse, wearing a stable jacket, classical British portrait, oil on canvas, warm brown tones, muted background, soft window light, dignified, half-length, period-neutral modern racing attire, no logos",
+      "negative": "no text, no watermark, no logos, no sponsor branding, no real person likeness, anatomically correct horse, four legs",
+      "tool": "Bildgenerierung im Stapel",
+      "notes": "Generisch, mehrfach verwendbar; keine realen Personen."
+    },
+    {
+      "id": "staff_vet",
+      "group": "Personal-Porträts",
+      "file": "assets/staff/vet.webp",
+      "size": "1024x1024",
+      "prompt": "equine veterinary surgeon with a stethoscope in a stable, classical British portrait, oil on canvas, warm brown tones, muted background, soft window light, dignified, half-length, period-neutral modern racing attire, no logos",
+      "negative": "no text, no watermark, no logos, no sponsor branding, no real person likeness, anatomically correct horse, four legs",
+      "tool": "Bildgenerierung im Stapel",
+      "notes": "Generisch, mehrfach verwendbar; keine realen Personen."
+    },
+    {
+      "id": "staff_farrier",
+      "group": "Personal-Porträts",
+      "file": "assets/staff/farrier.webp",
+      "size": "1024x1024",
+      "prompt": "farrier in a leather apron holding a horseshoe and hammer, classical British portrait, oil on canvas, warm brown tones, muted background, soft window light, dignified, half-length, period-neutral modern racing attire, no logos",
+      "negative": "no text, no watermark, no logos, no sponsor branding, no real person likeness, anatomically correct horse, four legs",
+      "tool": "Bildgenerierung im Stapel",
+      "notes": "Generisch, mehrfach verwendbar; keine realen Personen."
+    },
+    {
+      "id": "staff_stud_manager",
+      "group": "Personal-Porträts",
+      "file": "assets/staff/stud_manager.webp",
+      "size": "1024x1024",
+      "prompt": "stud manager in a paddock with mares in the background, classical British portrait, oil on canvas, warm brown tones, muted background, soft window light, dignified, half-length, period-neutral modern racing attire, no logos",
+      "negative": "no text, no watermark, no logos, no sponsor branding, no real person likeness, anatomically correct horse, four legs",
+      "tool": "Bildgenerierung im Stapel",
+      "notes": "Generisch, mehrfach verwendbar; keine realen Personen."
+    },
+    {
+      "id": "staff_bloodstock_agent",
+      "group": "Personal-Porträts",
+      "file": "assets/staff/bloodstock_agent.webp",
+      "size": "1024x1024",
+      "prompt": "bloodstock agent in a sharp suit holding a sales catalogue, classical British portrait, oil on canvas, warm brown tones, muted background, soft window light, dignified, half-length, period-neutral modern racing attire, no logos",
+      "negative": "no text, no watermark, no logos, no sponsor branding, no real person likeness, anatomically correct horse, four legs",
+      "tool": "Bildgenerierung im Stapel",
+      "notes": "Generisch, mehrfach verwendbar; keine realen Personen."
+    },
+    {
+      "id": "staff_analyst",
+      "group": "Personal-Porträts",
+      "file": "assets/staff/analyst.webp",
+      "size": "1024x1024",
+      "prompt": "racing data analyst with spectacles studying charts in a wood-panelled office, classical British portrait, oil on canvas, warm brown tones, muted background, soft window light, dignified, half-length, period-neutral modern racing attire, no logos",
+      "negative": "no text, no watermark, no logos, no sponsor branding, no real person likeness, anatomically correct horse, four legs",
+      "tool": "Bildgenerierung im Stapel",
+      "notes": "Generisch, mehrfach verwendbar; keine realen Personen."
+    },
+    {
+      "id": "course_ascot",
+      "group": "Rennbahnen",
+      "file": "assets/courses/ascot.webp",
+      "size": "1536x1024",
+      "prompt": "Ascot racecourse with its long modern grandstand and royal procession of carriages on the straight mile, horses racing, vintage 1930s British railway and racing poster, bold flat colours, art deco lithograph, strong simple shapes, limited palette, textured paper, elegant serif lettering area left blank",
+      "negative": "no text, no watermark, no logos, no sponsor branding, no real person likeness, anatomically correct horse, four legs",
+      "tool": "Bildgenerierung im Breitformat",
+      "notes": "Platz für Titel links oben frei lassen (Schrift kommt im Code)."
+    },
+    {
+      "id": "course_epsom",
+      "group": "Rennbahnen",
+      "file": "assets/courses/epsom.webp",
+      "size": "1536x1024",
+      "prompt": "Epsom Downs with the field sweeping around Tattenham Corner on the downs, horses racing, vintage 1930s British railway and racing poster, bold flat colours, art deco lithograph, strong simple shapes, limited palette, textured paper, elegant serif lettering area left blank",
+      "negative": "no text, no watermark, no logos, no sponsor branding, no real person likeness, anatomically correct horse, four legs",
+      "tool": "Bildgenerierung im Breitformat",
+      "notes": "Platz für Titel links oben frei lassen (Schrift kommt im Code)."
+    },
+    {
+      "id": "course_newmarket",
+      "group": "Rennbahnen",
+      "file": "assets/courses/newmarket.webp",
+      "size": "1536x1024",
+      "prompt": "Newmarket heath with the wide Rowley Mile and windswept open sky, horses racing, vintage 1930s British railway and racing poster, bold flat colours, art deco lithograph, strong simple shapes, limited palette, textured paper, elegant serif lettering area left blank",
+      "negative": "no text, no watermark, no logos, no sponsor branding, no real person likeness, anatomically correct horse, four legs",
+      "tool": "Bildgenerierung im Breitformat",
+      "notes": "Platz für Titel links oben frei lassen (Schrift kommt im Code)."
+    },
+    {
+      "id": "course_york",
+      "group": "Rennbahnen",
+      "file": "assets/courses/york.webp",
+      "size": "1536x1024",
+      "prompt": "York Knavesmire racecourse with the city minster on the horizon, horses racing, vintage 1930s British railway and racing poster, bold flat colours, art deco lithograph, strong simple shapes, limited palette, textured paper, elegant serif lettering area left blank",
+      "negative": "no text, no watermark, no logos, no sponsor branding, no real person likeness, anatomically correct horse, four legs",
+      "tool": "Bildgenerierung im Breitformat",
+      "notes": "Platz für Titel links oben frei lassen (Schrift kommt im Code)."
+    },
+    {
+      "id": "course_goodwood",
+      "group": "Rennbahnen",
+      "file": "assets/courses/goodwood.webp",
+      "size": "1536x1024",
+      "prompt": "Glorious Goodwood high on the South Downs with sweeping views to the sea, horses racing, vintage 1930s British railway and racing poster, bold flat colours, art deco lithograph, strong simple shapes, limited palette, textured paper, elegant serif lettering area left blank",
+      "negative": "no text, no watermark, no logos, no sponsor branding, no real person likeness, anatomically correct horse, four legs",
+      "tool": "Bildgenerierung im Breitformat",
+      "notes": "Platz für Titel links oben frei lassen (Schrift kommt im Code)."
+    },
+    {
+      "id": "course_cheltenham",
+      "group": "Rennbahnen",
+      "file": "assets/courses/cheltenham.webp",
+      "size": "1536x1024",
+      "prompt": "Cheltenham racecourse in a natural amphitheatre below Cleeve Hill, horses racing, vintage 1930s British railway and racing poster, bold flat colours, art deco lithograph, strong simple shapes, limited palette, textured paper, elegant serif lettering area left blank",
+      "negative": "no text, no watermark, no logos, no sponsor branding, no real person likeness, anatomically correct horse, four legs",
+      "tool": "Bildgenerierung im Breitformat",
+      "notes": "Platz für Titel links oben frei lassen (Schrift kommt im Code)."
+    },
+    {
+      "id": "course_doncaster",
+      "group": "Rennbahnen",
+      "file": "assets/courses/doncaster.webp",
+      "size": "1536x1024",
+      "prompt": "Doncaster Town Moor with the long flat straight and grandstand, horses racing, vintage 1930s British railway and racing poster, bold flat colours, art deco lithograph, strong simple shapes, limited palette, textured paper, elegant serif lettering area left blank",
+      "negative": "no text, no watermark, no logos, no sponsor branding, no real person likeness, anatomically correct horse, four legs",
+      "tool": "Bildgenerierung im Breitformat",
+      "notes": "Platz für Titel links oben frei lassen (Schrift kommt im Code)."
+    },
+    {
+      "id": "course_sandown",
+      "group": "Rennbahnen",
+      "file": "assets/courses/sandown.webp",
+      "size": "1536x1024",
+      "prompt": "Sandown Park with the stiff uphill finish and Esher hills, horses racing, vintage 1930s British railway and racing poster, bold flat colours, art deco lithograph, strong simple shapes, limited palette, textured paper, elegant serif lettering area left blank",
+      "negative": "no text, no watermark, no logos, no sponsor branding, no real person likeness, anatomically correct horse, four legs",
+      "tool": "Bildgenerierung im Breitformat",
+      "notes": "Platz für Titel links oben frei lassen (Schrift kommt im Code)."
+    },
+    {
+      "id": "yard_level_1",
+      "group": "Anlage, UI und Plakate",
+      "file": "assets/misc/yard_level_1.webp",
+      "size": "1536x1024",
+      "prompt": "a small humble racing yard with six wooden loose boxes and a muddy courtyard, classical English equestrian portrait, oil on canvas, in the manner of 18th and 19th century British sporting art, warm brown tones, calm muted landscape background, soft natural light, fine visible brushwork, aged varnish, museum quality",
+      "negative": "no text, no watermark, no logos, no sponsor branding, no real person likeness, anatomically correct horse, four legs",
+      "tool": "Bildgenerierung"
+    },
+    {
+      "id": "yard_level_2",
+      "group": "Anlage, UI und Plakate",
+      "file": "assets/misc/yard_level_2.webp",
+      "size": "1536x1024",
+      "prompt": "a tidy brick racing yard with twenty boxes around a clock-tower courtyard, classical English equestrian portrait, oil on canvas, in the manner of 18th and 19th century British sporting art, warm brown tones, calm muted landscape background, soft natural light, fine visible brushwork, aged varnish, museum quality",
+      "negative": "no text, no watermark, no logos, no sponsor branding, no real person likeness, anatomically correct horse, four legs",
+      "tool": "Bildgenerierung"
+    },
+    {
+      "id": "yard_level_3",
+      "group": "Anlage, UI und Plakate",
+      "file": "assets/misc/yard_level_3.webp",
+      "size": "1536x1024",
+      "prompt": "a grand historic racing stables with a lawned quadrangle, clock tower and fifty boxes, classical English equestrian portrait, oil on canvas, in the manner of 18th and 19th century British sporting art, warm brown tones, calm muted landscape background, soft natural light, fine visible brushwork, aged varnish, museum quality",
+      "negative": "no text, no watermark, no logos, no sponsor branding, no real person likeness, anatomically correct horse, four legs",
+      "tool": "Bildgenerierung"
+    },
+    {
+      "id": "gallops",
+      "group": "Anlage, UI und Plakate",
+      "file": "assets/misc/gallops.webp",
+      "size": "1536x1024",
+      "prompt": "string of racehorses cantering up a long grass gallop on misty downs at dawn, classical English equestrian portrait, oil on canvas, in the manner of 18th and 19th century British sporting art, warm brown tones, calm muted landscape background, soft natural light, fine visible brushwork, aged varnish, museum quality",
+      "negative": "no text, no watermark, no logos, no sponsor branding, no real person likeness, anatomically correct horse, four legs",
+      "tool": "Bildgenerierung"
+    },
+    {
+      "id": "equine_pool",
+      "group": "Anlage, UI und Plakate",
+      "file": "assets/misc/equine_pool.webp",
+      "size": "1536x1024",
+      "prompt": "racehorse being exercised in an equine swimming pool inside a timber barn, classical English equestrian portrait, oil on canvas, in the manner of 18th and 19th century British sporting art, warm brown tones, calm muted landscape background, soft natural light, fine visible brushwork, aged varnish, museum quality",
+      "negative": "no text, no watermark, no logos, no sponsor branding, no real person likeness, anatomically correct horse, four legs",
+      "tool": "Bildgenerierung"
+    },
+    {
+      "id": "vet_clinic",
+      "group": "Anlage, UI und Plakate",
+      "file": "assets/misc/vet_clinic.webp",
+      "size": "1536x1024",
+      "prompt": "equine veterinary clinic with a horse in examination stocks, classical English equestrian portrait, oil on canvas, in the manner of 18th and 19th century British sporting art, warm brown tones, calm muted landscape background, soft natural light, fine visible brushwork, aged varnish, museum quality",
+      "negative": "no text, no watermark, no logos, no sponsor branding, no real person likeness, anatomically correct horse, four legs",
+      "tool": "Bildgenerierung"
+    },
+    {
+      "id": "stud_paddocks",
+      "group": "Anlage, UI und Plakate",
+      "file": "assets/misc/stud_paddocks.webp",
+      "size": "1536x1024",
+      "prompt": "stud farm paddocks with post-and-rail fencing, mares and foals grazing under oaks, classical English equestrian portrait, oil on canvas, in the manner of 18th and 19th century British sporting art, warm brown tones, calm muted landscape background, soft natural light, fine visible brushwork, aged varnish, museum quality",
+      "negative": "no text, no watermark, no logos, no sponsor branding, no real person likeness, anatomically correct horse, four legs",
+      "tool": "Bildgenerierung"
+    },
+    {
+      "id": "ui_office",
+      "group": "Anlage, UI und Plakate",
+      "file": "assets/misc/ui_office.webp",
+      "size": "1536x1024",
+      "prompt": "trainer's office interior with leather chair, oak desk, form books and racing pictures, no people, classical English equestrian portrait, oil on canvas, in the manner of 18th and 19th century British sporting art, warm brown tones, calm muted landscape background, soft natural light, fine visible brushwork, aged varnish, museum quality",
+      "negative": "no text, no watermark, no logos, no sponsor branding, no real person likeness, anatomically correct horse, four legs",
+      "tool": "Bildgenerierung"
+    },
+    {
+      "id": "ui_parchment",
+      "group": "Anlage, UI und Plakate",
+      "file": "assets/misc/ui_parchment.webp",
+      "size": "1536x1024",
+      "prompt": "seamless subtle parchment texture with faint tweed weave, very low contrast, for user interface background, texture, flat, even lighting, tileable",
+      "negative": "no text, no watermark, no logos, no sponsor branding, no real person likeness, anatomically correct horse, four legs",
+      "tool": "Bildgenerierung"
+    },
+    {
+      "id": "poster_2000_guineas",
+      "group": "Anlage, UI und Plakate",
+      "file": "assets/misc/poster_2000_guineas.webp",
+      "size": "1024x1536",
+      "prompt": "two-year-old colts racing on the Rowley Mile at Newmarket, celebration of the 2000 Guineas, vintage 1930s British railway and racing poster, bold flat colours, art deco lithograph, strong simple shapes, limited palette, textured paper, elegant serif lettering area left blank",
+      "negative": "no text, no watermark, no logos, no sponsor branding, no real person likeness, anatomically correct horse, four legs",
+      "tool": "Bildgenerierung"
+    },
+    {
+      "id": "poster_1000_guineas",
+      "group": "Anlage, UI und Plakate",
+      "file": "assets/misc/poster_1000_guineas.webp",
+      "size": "1024x1536",
+      "prompt": "fillies racing on Newmarket heath in spring, celebration of the 1000 Guineas, vintage 1930s British railway and racing poster, bold flat colours, art deco lithograph, strong simple shapes, limited palette, textured paper, elegant serif lettering area left blank",
+      "negative": "no text, no watermark, no logos, no sponsor branding, no real person likeness, anatomically correct horse, four legs",
+      "tool": "Bildgenerierung"
+    },
+    {
+      "id": "poster_derby",
+      "group": "Anlage, UI und Plakate",
+      "file": "assets/misc/poster_derby.webp",
+      "size": "1024x1536",
+      "prompt": "the Derby at Epsom, field rounding Tattenham Corner with huge crowds on the downs, vintage 1930s British railway and racing poster, bold flat colours, art deco lithograph, strong simple shapes, limited palette, textured paper, elegant serif lettering area left blank",
+      "negative": "no text, no watermark, no logos, no sponsor branding, no real person likeness, anatomically correct horse, four legs",
+      "tool": "Bildgenerierung"
+    },
+    {
+      "id": "poster_oaks",
+      "group": "Anlage, UI und Plakate",
+      "file": "assets/misc/poster_oaks.webp",
+      "size": "1024x1536",
+      "prompt": "the Oaks at Epsom, fillies in the home straight with grandstand and spring sky, vintage 1930s British railway and racing poster, bold flat colours, art deco lithograph, strong simple shapes, limited palette, textured paper, elegant serif lettering area left blank",
+      "negative": "no text, no watermark, no logos, no sponsor branding, no real person likeness, anatomically correct horse, four legs",
+      "tool": "Bildgenerierung"
+    },
+    {
+      "id": "poster_st_leger",
+      "group": "Anlage, UI und Plakate",
+      "file": "assets/misc/poster_st_leger.webp",
+      "size": "1024x1536",
+      "prompt": "the St Leger at Doncaster, stayers fighting out the finish in autumn light, vintage 1930s British railway and racing poster, bold flat colours, art deco lithograph, strong simple shapes, limited palette, textured paper, elegant serif lettering area left blank",
+      "negative": "no text, no watermark, no logos, no sponsor branding, no real person likeness, anatomically correct horse, four legs",
+      "tool": "Bildgenerierung"
+    },
+    {
+      "id": "poster_king_george",
+      "group": "Anlage, UI und Plakate",
+      "file": "assets/misc/poster_king_george.webp",
+      "size": "1024x1536",
+      "prompt": "the King George at Ascot in high summer, horses passing the royal enclosure, vintage 1930s British railway and racing poster, bold flat colours, art deco lithograph, strong simple shapes, limited palette, textured paper, elegant serif lettering area left blank",
+      "negative": "no text, no watermark, no logos, no sponsor branding, no real person likeness, anatomically correct horse, four legs",
+      "tool": "Bildgenerierung"
+    }
+  ]
+}

@@ -16,7 +16,8 @@ export const DEFAULT_TACTIC: Tactic = { position: 'natural', attack: 'normal', p
 export function estimateLevel(h: Horse): number {
   const c = h.current;
   const phys = (c.speed + c.stamina + c.kick + c.acceleration) / 4;
-  return PAR_FIGURE + 2 * (phys - PAR_QUALITY);
+  // −5: im Feld (Verkehr, Tempo, Tagesform) bleibt ein Pferd im Mittel unter seiner Solo-Leistung
+  return PAR_FIGURE + 2 * (phys - PAR_QUALITY) - 5;
 }
 
 /** Niveau aus Sicht der KI: Rating, sonst bestes Figure, sonst Schätzung des Trainers. */

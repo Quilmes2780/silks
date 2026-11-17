@@ -107,7 +107,12 @@ function candidateHorseName(rng: Rng): string {
   if (r < 0.66) return `${rng.pick(GIVEN)}'${rng.pick(SUFFIXES)}`;
   if (r < 0.76) return `${rng.pick(PLACE)} ${rng.pick(NOUN)}`;
   if (r < 0.86) return `The ${rng.pick(NOUN)}`;
-  if (r < 0.94) return cap(`${rng.pick(NOUN)}${rng.pick(NOUN).toLowerCase()}`);
+  if (r < 0.94) {
+    const a = rng.pick(NOUN);
+    let b = rng.pick(NOUN);
+    while (b === a) b = rng.pick(NOUN);
+    return cap(`${a}${b.toLowerCase()}`);
+  }
   return `${rng.pick(ADJ)} ${rng.pick(PLACE)}`;
 }
 

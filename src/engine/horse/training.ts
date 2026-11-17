@@ -121,10 +121,10 @@ export function weeklyTraining(h: Horse, rng: Rng, ctx: WeekTrainingContext): Tr
   for (const k of ATTR_KEYS) h.current[k] = Math.round(h.current[k] * 100) / 100;
 
   // Verletzungsrisiko je Bein (% pro Woche)
-  const tired = Math.max(0, 45 - c.freshness) * 0.03;
+  const tired = Math.max(0, 45 - c.freshness) * 0.02;
   const old = Math.max(0, age - 5) * 0.15;
-  const base = [0.25, 0.25, 0.15, 0.15];
-  c.legRisk = base.map((b) => round2(Math.max(0.05, b + Math.max(-0.1, load) * 0.06 + tired + old))) as [number, number, number, number];
+  const base = [0.09, 0.09, 0.06, 0.06];
+  c.legRisk = base.map((b) => round2(Math.max(0.05, b + Math.max(-0.1, load) * 0.015 + tired + old))) as [number, number, number, number];
 
   const injury = rollInjury(rng, c.legRisk, age);
   if (injury) {
@@ -138,7 +138,7 @@ export function rollInjury(
   legRisk: readonly number[],
   age: number,
 ): { type: InjuryType; weeks: number; leg: number | null } | null {
-  if (rng.chance(0.004)) return { type: 'cough', weeks: rng.int(2, 3), leg: null };
+  if (rng.chance(0.002)) return { type: 'cough', weeks: rng.int(2, 3), leg: null };
   for (let leg = 0; leg < 4; leg++) {
     if (rng.chance((legRisk[leg] ?? 0) / 100)) {
       const type = rng.weighted<InjuryType>(['sore_shins', 'hoof', 'muscle', 'tendon'], [age < 3 ? 4 : 1, 3, 3, 1.2]);

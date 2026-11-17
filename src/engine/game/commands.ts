@@ -73,6 +73,15 @@ export function setRaceOrders(g: GameState, raceId: string, horseId: string, tac
     if (jockeyId) {
       if (!g.jockeys[jockeyId]) throw new GameError('Jockey nicht gefunden.');
       if (race.runners!.some((r) => r.horseId !== horseId && r.jockeyId === jockeyId)) throw new GameError('Der Jockey reitet in diesem Rennen bereits ein anderes Pferd.');
+      const day = g.templates[race.templateId]!.day;
+      const elsewhere = Object.values(g.races).find(
+        (o) =>
+          o.weekIndex === race.weekIndex &&
+          o.meetingId !== race.meetingId &&
+          g.templates[o.templateId]!.day === day &&
+          o.runners?.some((r) => r.jockeyId === jockeyId),
+      );
+      if (elsewhere) throw new GameError(`Der Jockey reitet an diesem Tag bereits in ${g.tracks[g.templates[elsewhere.templateId]!.trackId]!.name}.`);
       runner.jockeyId = jockeyId;
     }
   }

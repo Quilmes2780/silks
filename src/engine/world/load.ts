@@ -45,6 +45,8 @@ export interface GenericRace {
   orMax?: number;
   maidenOnly?: boolean;
   maxWins?: number;
+  /** Claiming-Rennen: mögliche Claiming-Preise */
+  claimPrices?: number[];
   fromWeek?: number;
   toWeek?: number;
   weight: number;

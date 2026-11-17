@@ -2,7 +2,7 @@ import { Rng } from '../rng';
 import type { Horse, RaceInstance, Tactic, TrainingBlock, TrainingPlan } from '../types';
 import { TRAINING_TEMPLATES } from '../horse/training';
 import { checkEligibility, raceLevel } from '../season/rules';
-import { sortedById, type GameState } from '../game/state';
+import { book, sortedById, type GameState } from '../game/state';
 import { PAR_FIGURE, PAR_QUALITY } from '../stats/speedFigure';
 
 /**
@@ -46,7 +46,7 @@ function wantsToRun(h: Horse, raceWeekIndex: number, season: number, week: numbe
 }
 
 /** Nennungen aller KI-Ställe für Rennen, deren Nennschluss in dieser Woche liegt. */
-export function aiMakeEntries(g: GameState, catchUp = false): number {
+export function aiMakeEntries(g: GameState, catchUp = false, kind: 'ai' | 'player' = 'ai'): number {
   const closing = sortedById(Object.values(g.races)).filter((race) => {
     const t = g.templates[race.templateId]!;
     if (race.status !== 'open') return false;
@@ -56,7 +56,7 @@ export function aiMakeEntries(g: GameState, catchUp = false): number {
   });
   if (!closing.length) return 0;
   const r = new Rng(g.seed).fork('ai-entries', g.weekIndex);
-  const horses = r.shuffle(sortedById(Object.values(g.horses)).filter((h) => h.status === 'active' && !g.stables[h.stableId]!.isPlayer));
+  const horses = r.shuffle(sortedById(Object.values(g.horses)).filter((h) => h.status === 'active' && g.stables[h.stableId]!.kind === kind));
   // Wochen, in denen ein Pferd bereits genannt ist
   const enteredWeeks = new Map<string, number[]>();
   for (const race of Object.values(g.races)) {
@@ -89,6 +89,8 @@ export function aiMakeEntries(g: GameState, catchUp = false): number {
       for (const race of races) {
         const t = g.templates[race.templateId]!;
         if (!checkEligibility(h, t, raceSeason).ok) continue;
+        // Claiming: nur Pferde, deren Wert nicht deutlich über dem Claiming-Preis liegt
+        if (t.claimPrice !== null && (h.value ?? 0) > t.claimPrice * 1.25) continue;
         const lv = raceLevel(t);
         const isGroup = t.raceClass === 'G1' || t.raceClass === 'G2' || t.raceClass === 'G3' || t.raceClass === 'Listed';
         const diff = level - lv;
@@ -112,7 +114,7 @@ export function aiMakeEntries(g: GameState, catchUp = false): number {
       if (best && bestScore > -2) {
         const t = g.templates[best.templateId]!;
         best.entries.push({ horseId: h.id, stableId: h.stableId, enteredWeekIndex: g.weekIndex, jockeyId: null, tactic: { ...DEFAULT_TACTIC } });
-        g.stables[h.stableId]!.balance -= t.entryFee;
+        book(g, h.stableId, { amount: -t.entryFee, kind: 'entry_fee', text: `Nenngebühr ${t.name} (${h.name})`, raceId: best.id, horseId: h.id });
         taken.push(raceWeekIndex);
         enteredWeeks.set(h.id, taken);
         count++;
@@ -134,11 +136,17 @@ export function aiTrainingPlan(h: Horse): TrainingPlan {
   return [...TRAINING_TEMPLATES[key]!.plan] as TrainingPlan;
 }
 
-export function aiSetTraining(g: GameState): void {
+export function aiSetTraining(g: GameState, kind: 'ai' | 'player' = 'ai'): void {
   for (const h of Object.values(g.horses)) {
-    if (h.status !== 'active' || g.stables[h.stableId]!.isPlayer) continue;
+    if (h.status !== 'active' || g.stables[h.stableId]!.kind !== kind) continue;
     h.training = aiTrainingPlan(h);
   }
 }
 
 export type { TrainingBlock };
+
+/** Autopilot für den Spielerstall (Kalibrierung, später als Assistenz denkbar): nennt und trainiert wie die KI. */
+export function autopilot(g: GameState): void {
+  aiMakeEntries(g, false, 'player');
+  aiSetTraining(g, 'player');
+}

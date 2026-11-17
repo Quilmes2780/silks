@@ -1,7 +1,13 @@
 import { createGame } from '../engine/game/newGame';
 import { advanceWeek } from '../engine/game/week';
 import * as cmd from '../engine/game/commands';
+import * as staffCmd from '../engine/game/staffCommands';
 import * as q from '../engine/game/queries';
+import * as eq from '../engine/game/econQueries';
+import * as transfer from '../engine/market/transfer';
+import * as auction from '../engine/market/auction';
+import { toggleClaim } from '../engine/market/claiming';
+import { migrateGame } from '../engine/game/migrate';
 import type { GameState } from '../engine/game/state';
 import { bundledWorld } from '../engine/world/bundled';
 import type { Api, ApiType } from './protocol';
@@ -34,10 +40,14 @@ export class GameService {
     this.savedSeasons = new Set(g.calendarSeasons);
   }
 
-  /** Speichert Kern + angegebene Datensätze. */
+  /** Speichert Kern, angegebene Datensätze und alles, was die Engine als geändert markiert hat. */
   private async persist(extra: { horses?: string[]; races?: string[] } = {}) {
     const g = this.g;
-    await this.store.save(g, { horses: extra.horses, races: extra.races }, this.clock.now());
+    const horses = [...(extra.horses ?? []), ...g.touchedHorses];
+    const races = [...(extra.races ?? []), ...g.touchedRaces];
+    await this.store.save(g, { horses, races }, this.clock.now());
+    g.touchedHorses = [];
+    g.touchedRaces = [];
   }
 
   private async persistWeek() {
@@ -52,9 +62,18 @@ export class GameService {
     const horses = Object.values(g.horses)
       .filter((h) => h.status === 'active' || (h.lastRunWeekIndex ?? -99) >= g.weekIndex - 60)
       .map((h) => h.id);
-    await this.store.save(g, { horses, runs: newRuns, races, templates }, this.clock.now());
+    await this.store.save(g, { horses: [...horses, ...g.touchedHorses], runs: newRuns, races: [...races, ...g.touchedRaces], templates }, this.clock.now());
+    g.touchedHorses = [];
+    g.touchedRaces = [];
     this.savedRunCounter = g.counters.run;
     for (const s of newSeasons) this.savedSeasons.add(s);
+  }
+
+  /** Befehl ausführen und speichern. */
+  private async run<T>(fn: (g: GameState) => T, extra: { horses?: string[]; races?: string[] } = {}): Promise<T> {
+    const res = fn(this.g);
+    await this.persist(extra);
+    return res;
   }
 
   handlers: Handlers = {
@@ -80,7 +99,13 @@ export class GameService {
     loadGame: async ({ saveId }) => {
       const g = await this.store.load(saveId);
       if (!g) throw new Error('Spielstand nicht gefunden.');
+      const migrated = migrateGame(g as unknown as Record<string, unknown>);
       this.markLoaded(g);
+      if (migrated) {
+        g.touchedHorses = [];
+        g.touchedRaces = [];
+        return this.store.saveFull(g, this.clock.now());
+      }
       return metaOf(g, this.clock.now());
     },
 
@@ -91,8 +116,10 @@ export class GameService {
     },
 
     exportSave: async ({ saveId }) => {
-      const g = this.game?.id === saveId ? this.game : await this.store.load(saveId);
+      let g = this.game?.id === saveId ? this.game : await this.store.load(saveId);
       if (!g) throw new Error('Spielstand nicht gefunden.');
+      if (g !== this.game) migrateGame(g as unknown as Record<string, unknown>);
+      g = g as GameState;
       const safe = g.name.replace(/[^A-Za-z0-9äöüÄÖÜß_-]+/g, '_');
       return { fileName: `silks-${safe}-${g.season}-W${g.week}.json`, json: exportJson(g, this.clock.now()) };
     },
@@ -113,59 +140,59 @@ export class GameService {
       return s;
     },
 
-    enterRace: async (p) => {
-      cmd.enterRace(this.g, p.raceId, p.horseId, p.jockeyId ?? null, p.tactic);
-      await this.persist({ races: [p.raceId] });
-      return null;
-    },
+    enterRace: (p) => this.run((g) => (cmd.enterRace(g, p.raceId, p.horseId, p.jockeyId ?? null, p.tactic), null), { races: [p.raceId] }),
+    withdrawEntry: (p) => this.run((g) => (cmd.withdrawEntry(g, p.raceId, p.horseId), null), { races: [p.raceId] }),
+    setRaceOrders: (p) => this.run((g) => (cmd.setRaceOrders(g, p.raceId, p.horseId, p.tactic, p.jockeyId), null), { races: [p.raceId] }),
+    setTraining: (p) => this.run((g) => (cmd.setTraining(g, p.horseId, p.plan), null), { horses: [p.horseId] }),
+    markInboxRead: (p) => this.run((g) => (cmd.markInboxRead(g, p.ids), null)),
+    renameStable: (p) => this.run((g) => (cmd.renameStable(g, p.name), null)),
+    setSilks: (p) => this.run((g) => ((g.stables[g.playerStableId]!.silks = p.silks), null)),
 
-    withdrawEntry: async (p) => {
-      cmd.withdrawEntry(this.g, p.raceId, p.horseId);
-      await this.persist({ races: [p.raceId] });
-      return null;
-    },
+    // Personal und Anlage
+    hireStaff: (p) => this.run((g) => staffCmd.hireStaff(g, p.staffId, p), { horses: [] }),
+    offerContract: (p) => this.run((g) => staffCmd.offerContract(g, p.staffId, p)),
+    fireStaff: (p) => this.run((g) => staffCmd.fireStaff(g, p.staffId), { horses: this.ownHorses() }),
+    assignGroom: (p) => this.run((g) => (staffCmd.assignGroom(g, p.horseId, p.groomId), null), { horses: [p.horseId] }),
+    upgradeFacility: (p) => this.run((g) => (staffCmd.upgradeFacility(g, p.key), null)),
 
-    setRaceOrders: async (p) => {
-      cmd.setRaceOrders(this.g, p.raceId, p.horseId, p.tactic, p.jockeyId);
-      await this.persist({ races: [p.raceId] });
-      return null;
-    },
+    // Markt
+    makeOffer: (p) => this.run((g) => transfer.makeOffer(g, p.horseId, p.amount)),
+    respondOffer: (p) => this.run((g) => transfer.respondOffer(g, p.offerId, p.action, p.amount)),
+    listForSale: (p) => this.run((g) => (transfer.listForSale(g, p.horseId, p.askingPrice), null)),
+    bid: (p) => this.run((g) => auction.bid(g, p.lotId, p.amount)),
+    pass: (p) => this.run((g) => auction.pass(g, p.lotId)),
+    setAutoBid: (p) => this.run((g) => (auction.setAutoBid(g, p.lotId, p.limit), null)),
+    finishAuction: (p) => this.run((g) => (auction.finishAuction(g, p.auctionId), null)),
+    consign: (p) => this.run((g) => (auction.consign(g, p.horseId, p.auctionId, p.reserve), null)),
+    withdrawLot: (p) => this.run((g) => (auction.withdrawLot(g, p.horseId, p.auctionId), null)),
+    claimHorse: (p) => this.run((g) => ({ claimed: toggleClaim(g, p.raceId, p.horseId) }), { races: [p.raceId] }),
 
-    setTraining: async (p) => {
-      cmd.setTraining(this.g, p.horseId, p.plan);
-      await this.persist({ horses: [p.horseId] });
-      return null;
-    },
-
-    markInboxRead: async (p) => {
-      cmd.markInboxRead(this.g, p.ids);
-      await this.persist();
-      return null;
-    },
-
-    renameStable: async (p) => {
-      cmd.renameStable(this.g, p.name);
-      await this.persist();
-      return null;
-    },
-
-    setSilks: async (p) => {
-      this.g.stables[this.g.playerStableId]!.silks = p.silks;
-      await this.persist();
-      return null;
-    },
-
+    // Abfragen
     header: () => q.headerView(this.g),
-    office: () => q.officeView(this.g),
-    stableList: (p) => q.stableRows(this.g, p?.stableId),
-    horseProfile: (p) => q.horseProfile(this.g, p.horseId),
+    office: () => q.applyAnalyst(this.g, q.officeView(this.g)),
+    stableList: (p) => q.applyAnalyst(this.g, q.stableRows(this.g, p?.stableId)),
+    horseProfile: (p) => q.applyAnalyst(this.g, q.horseProfile(this.g, p.horseId)),
     calendar: (p) => q.calendarView(this.g, p),
-    raceCard: (p) => q.raceCard(this.g, p.raceId),
+    raceCard: (p) => q.applyAnalyst(this.g, q.raceCard(this.g, p.raceId)),
     replay: (p) => q.replayView(this.g, p.raceId),
     jockeys: () => q.jockeyList(this.g),
     trainingInfo: () => q.trainingInfo(),
-    runLinks: (p) => q.runLinks(this.g, p.runIds),
+    runLinks: (p) => q.applyAnalyst(this.g, q.runLinks(this.g, p.runIds)),
+    staff: () => eq.staffView(this.g),
+    staffOfferHint: (p) => eq.staffOfferHint(this.g, p.staffId),
+    finance: (p) => eq.financeView(this.g, p?.season),
+    facilities: () => eq.facilitiesView(this.g),
+    market: () => q.applyAnalyst(this.g, eq.marketView(this.g)),
+    auction: (p) => eq.auctionView(this.g, p.auctionId),
   };
+
+  private ownHorses(): string[] {
+    const g = this.game;
+    if (!g) return [];
+    return Object.values(g.horses)
+      .filter((h) => h.stableId === g.playerStableId)
+      .map((h) => h.id);
+  }
 
   async handle<K extends ApiType>(type: K, payload: Api[K]['req']): Promise<Api[K]['res']> {
     const h = this.handlers[type] as (req: Api[K]['req']) => Promise<Api[K]['res']> | Api[K]['res'];

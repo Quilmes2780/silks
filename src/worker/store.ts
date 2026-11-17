@@ -2,6 +2,7 @@ import Dexie, { type Table } from 'dexie';
 import type { GameState } from '../engine/game/state';
 import type { Horse, RaceInstance, RaceTemplate, Run } from '../engine/types';
 import type { SaveMeta } from './protocol';
+import { migrateGame, SAVE_VERSION } from '../engine/game/migrate';
 
 /**
  * Persistenz in IndexedDB über Dexie. Mehrere Spielstände; große Sammlungen (Pferde, Starts,
@@ -14,7 +15,7 @@ interface Row<T> {
   data: T;
 }
 
-type Core = Omit<GameState, 'horses' | 'runs' | 'races' | 'templates'>;
+type Core = Omit<GameState, 'horses' | 'runs' | 'races' | 'templates' | 'touchedHorses' | 'touchedRaces'>;
 
 class SilksDb extends Dexie {
   saves!: Table<SaveMeta, string>;
@@ -50,7 +51,9 @@ export function metaOf(g: GameState, updatedAt: string): SaveMeta {
 }
 
 function coreOf(g: GameState): Core {
-  const { horses: _h, runs: _r, races: _ra, templates: _t, ...core } = g;
+  const { horses: _h, runs: _r, races: _ra, templates: _t, touchedHorses: _th, touchedRaces: _tr, ...core } = g;
+  void _th;
+  void _tr;
   void _h;
   void _r;
   void _ra;
@@ -105,7 +108,8 @@ export class SaveStore {
       this.db.races.where('saveId').equals(id).toArray(),
       this.db.templates.where('saveId').equals(id).toArray(),
     ]);
-    return { ...core.data, horses: toMap(horses), runs: toMap(runs), races: toMap(races), templates: toMap(templates) } as GameState;
+    const g = { ...core.data, horses: toMap(horses), runs: toMap(runs), races: toMap(races), templates: toMap(templates), touchedHorses: [], touchedRaces: [] } as GameState;
+    return g;
   }
 
   async delete(id: string): Promise<void> {
@@ -127,7 +131,10 @@ export class SaveStore {
 export const EXPORT_FORMAT = 'silks-and-stamina-save';
 
 export function exportJson(g: GameState, now: string): string {
-  return JSON.stringify({ format: EXPORT_FORMAT, version: 1, exportedAt: now, game: g });
+  const { touchedHorses: _t, touchedRaces: _tr, ...rest } = g;
+  void _t;
+  void _tr;
+  return JSON.stringify({ format: EXPORT_FORMAT, version: SAVE_VERSION, exportedAt: now, game: rest });
 }
 
 export function parseImport(json: string): GameState {
@@ -139,10 +146,16 @@ export function parseImport(json: string): GameState {
   }
   const p = parsed as { format?: string; version?: number; game?: GameState };
   if (p.format !== EXPORT_FORMAT || !p.game) throw new Error('Die Datei ist kein Spielstand von Silks & Stamina.');
-  if (p.version !== 1 || p.game.version !== 1) throw new Error(`Spielstand-Version ${p.version} wird nicht unterstützt.`);
-  const g = p.game;
-  for (const key of ['horses', 'runs', 'races', 'templates', 'stables', 'jockeys', 'trainers', 'tracks'] as const) {
-    if (typeof g[key] !== 'object' || g[key] === null) throw new Error(`Spielstand unvollständig: ${key} fehlt.`);
+  const v = p.game.version as number;
+  if ((p.version !== 1 && p.version !== SAVE_VERSION) || (v !== 1 && v !== SAVE_VERSION)) throw new Error(`Spielstand-Version ${p.version} wird nicht unterstützt.`);
+  const raw = p.game as unknown as Record<string, unknown>;
+  const required = v === 1 ? ['horses', 'runs', 'races', 'templates', 'stables', 'jockeys', 'trainers', 'tracks'] : ['horses', 'runs', 'races', 'templates', 'stables', 'staff', 'tracks', 'finance'];
+  for (const key of required) {
+    if (typeof raw[key] !== 'object' || raw[key] === null) throw new Error(`Spielstand unvollständig: ${key} fehlt.`);
   }
+  migrateGame(raw);
+  const g = raw as unknown as GameState;
+  g.touchedHorses = [];
+  g.touchedRaces = [];
   return g;
 }

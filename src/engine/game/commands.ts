@@ -3,6 +3,8 @@ import { checkEligibility } from '../season/rules';
 import { TRAINING_TEMPLATES } from '../horse/training';
 import { DEFAULT_TACTIC } from '../ai/ai';
 import { addLedger, type GameState } from './state';
+import { apprenticeAllowance, isSuspended } from '../staff/staff';
+import { allowanceApplies } from './raceDay';
 
 /**
  * Befehle des Spielers. Jede Funktion prüft die Regeln und wirft bei Verstößen einen
@@ -71,7 +73,10 @@ export function setRaceOrders(g: GameState, raceId: string, horseId: string, tac
   if (runner) {
     runner.tactic = { ...tactic };
     if (jockeyId) {
-      if (!g.jockeys[jockeyId]) throw new GameError('Jockey nicht gefunden.');
+      const jk = g.staff[jockeyId];
+      if (!jk?.jockey) throw new GameError('Jockey nicht gefunden.');
+      if (isSuspended(jk, race.weekIndex)) throw new GameError(`${jk.name} ist gesperrt.`);
+      if (jk.contract && jk.contract.stableId !== g.playerStableId) throw new GameError(`${jk.name} ist Stalljockey bei ${g.stables[jk.contract.stableId]!.name}.`);
       if (race.runners!.some((r) => r.horseId !== horseId && r.jockeyId === jockeyId)) throw new GameError('Der Jockey reitet in diesem Rennen bereits ein anderes Pferd.');
       const day = g.templates[race.templateId]!.day;
       const elsewhere = Object.values(g.races).find(
@@ -83,6 +88,9 @@ export function setRaceOrders(g: GameState, raceId: string, horseId: string, tac
       );
       if (elsewhere) throw new GameError(`Der Jockey reitet an diesem Tag bereits in ${g.tracks[g.templates[elsewhere.templateId]!.trackId]!.name}.`);
       runner.jockeyId = jockeyId;
+      const t = g.templates[race.templateId]!;
+      runner.allowanceLb = allowanceApplies(t.raceClass) ? apprenticeAllowance(jk) : 0;
+      runner.weightLb = Math.max(runner.assignedLb - runner.allowanceLb, jk.jockey.weightLb);
     }
   }
 }

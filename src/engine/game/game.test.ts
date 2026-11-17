@@ -37,7 +37,7 @@ describe('Weltdaten', () => {
 describe('Neues Spiel und Wochenschleife', () => {
   it('legt Ställe, Pferde, Jockeys und Kalender an', () => {
     const g = newGame();
-    const ai = Object.values(g.stables).filter((s) => !s.isPlayer);
+    const ai = Object.values(g.stables).filter((s) => s.kind === 'ai');
     expect(ai.length).toBe(8);
     expect(Object.values(g.horses).filter((h) => h.stableId === 'player').length).toBe(6);
     expect(Object.values(g.templates).some((t) => t.name === 'The Derby')).toBe(true);

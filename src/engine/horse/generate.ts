@@ -97,6 +97,15 @@ export function generateMarkings(rng: Rng): Markings {
   return { face, socks: [rng.chance(0.2), rng.chance(0.2), rng.chance(0.3), rng.chance(0.3)] };
 }
 
+/**
+ * Öffentlicher Eindruck vom Körperbau: mittleres körperliches Potenzial plus Rauschen.
+ * Eigener RNG-Zweig, damit die übrige Zufallsfolge unverändert bleibt.
+ */
+export function conformationOf(potential: Attributes, rng: Rng): number {
+  const phys = (potential.speed + potential.stamina + potential.kick + potential.acceleration) / 4;
+  return Math.round(Math.max(1, Math.min(100, phys + rng.normal(0, 6))));
+}
+
 export function generateHorse(rng: Rng, o: GenerateHorseOptions): Horse {
   const prefs = generatePreferences(rng, o.distOptM);
   const potential = generatePotential(rng, o.quality, prefs.distOptM);
@@ -149,6 +158,12 @@ export function generateHorse(rng: Rng, o: GenerateHorseOptions): Horse {
     stats: emptyStats(),
     estimateNoise,
     value: null,
+    valueHistory: [],
+    conformation: conformationOf(potential, rng.fork('conformation')),
+    groomId: null,
+    groomBond: 0,
+    purchase: null,
+    forSale: null,
     source: 'generated',
     placeholder: false,
   };

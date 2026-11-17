@@ -28,6 +28,8 @@ import { canEnter } from './commands';
 import { replayRace } from './raceDay';
 import { dateLabel, furlongs, sexLabel, weekLabel, COLOUR_LABEL } from './format';
 import type { GameState, WeekSummary } from './state';
+import { activeJockeys, apprenticeAllowance, figurePrecision, isSuspended, stars } from '../staff/staff';
+import { horseMarketInfo, type HorseMarketInfo, officeExtras, type OfficeExtras } from './econQueries';
 
 /**
  * Lesesicht für die UI: fertige, serialisierbare DTOs.
@@ -113,9 +115,10 @@ export interface OfficeView {
   inbox: InboxMessage[];
   upcoming: UpcomingEntry[];
   form: FormRow[];
-  finance: { balance: number; seasonPrize: number; seasonCosts: number; lastEntries: Array<{ text: string; amount: number; week: number; season: number }> };
+  finance: { balance: number; seasonPrize: number; seasonNet: number; seasonCosts: number; lastEntries: Array<{ text: string; amount: number; week: number; season: number }> };
   lastSummary: WeekSummary | null;
   leaders: Array<{ stable: StableRef; wins: number; prize: number }>;
+  extras: OfficeExtras;
 }
 
 export function upcomingEntries(g: GameState, horseId?: string): UpcomingEntry[] {
@@ -184,11 +187,13 @@ export function officeView(g: GameState): OfficeView {
     finance: {
       balance: g.stables[g.playerStableId]!.balance,
       seasonPrize: ledgerSeason.filter((l) => l.kind === 'prize').reduce((a, l) => a + l.amount, 0),
+      seasonNet: ledgerSeason.reduce((a, l) => a + l.amount, 0),
       seasonCosts: ledgerSeason.filter((l) => l.amount < 0).reduce((a, l) => a + l.amount, 0),
       lastEntries: [...g.ledger].reverse().slice(0, 12).map((l) => ({ text: l.text, amount: l.amount, week: l.week, season: l.season })),
     },
     lastSummary: g.lastSummary,
     leaders,
+    extras: officeExtras(g),
   };
 }
 
@@ -327,11 +332,16 @@ export interface HorseProfileView {
   heatmap: { dists: string[]; goings: string[]; cells: HeatCell[] };
   conditions: { distance: ConditionRow[]; going: ConditionRow[]; track: ConditionRow[]; stall: ConditionRow[]; jockey: ConditionRow[]; layoff: ConditionRow[]; surface: ConditionRow[] };
   upcoming: UpcomingEntry[];
+  market: HorseMarketInfo;
+  /** 0 = Speed Figures verborgen (kein Analyst), sonst Rundung in lb */
+  figurePrecision: number;
+  /** Verletzungsrisiko genau (mit Tierarzt) oder nur grob */
+  riskExact: boolean;
 }
 
 function trainerOpinion(g: GameState, h: Horse): HorseProfileView['trainerOpinion'] {
-  const trainer = g.trainers[g.stables[h.stableId]!.trainerId]!;
-  const fuzz = (1 - trainer.insight) * 0.5 / Math.sqrt(1 + h.stats.starts * 0.3);
+  const insight = g.staff[g.stables[h.stableId]!.trainerId]?.trainer?.insight ?? 0.4;
+  const fuzz = (1 - insight) * 0.5 / Math.sqrt(1 + h.stats.starts * 0.3);
   const opt = h.prefs.distOptM * Math.pow(2, h.estimateNoise.stamina * fuzz * 0.6);
   const lo = furlongs(opt / Math.pow(2, 0.25 * h.prefs.distRange), true);
   const hi = furlongs(opt * Math.pow(2, 0.25 * h.prefs.distRange), true);
@@ -366,7 +376,7 @@ export function careerRow(g: GameState, r: Run): CareerRow {
     beatenL: r.beatenL,
     weight: formatWeight(r.weightLb),
     stall: r.stall,
-    jockey: g.jockeys[r.jockeyId]?.name ?? r.jockeyId,
+    jockey: g.staff[r.jockeyId]?.name ?? r.jockeyId,
     time: r.timeS,
     speedFigure: r.speedFigure,
     finishingSpeedPct: r.finishingSpeedPct,
@@ -382,8 +392,8 @@ export function horseProfile(g: GameState, horseId: string): HorseProfileView {
   const own = h.stableId === g.playerStableId;
   const age = g.season - h.foalYear;
   const stable = g.stables[h.stableId]!;
-  const trainer = g.trainers[stable.trainerId]!;
-  const est = estimateAttributes(h, own ? trainer.insight : 0.3, own);
+  const trainer = g.staff[stable.trainerId];
+  const est = estimateAttributes(h, own ? (trainer?.trainer?.insight ?? 0.4) : 0.3, own);
   const tpl = Object.entries(TRAINING_TEMPLATES).find(([, v]) => v.plan.join() === h.training.join());
   const cells: HeatCell[] = Object.entries(h.stats.heatmap).map(([k, c]) => {
     const [dist, going] = k.split('|') as [string, string];
@@ -401,7 +411,7 @@ export function horseProfile(g: GameState, horseId: string): HorseProfileView {
     dam: h.damName,
     foalYear: h.foalYear,
     stable: stableRef(g, h.stableId),
-    trainerName: trainer.name,
+    trainerName: trainer?.name ?? '–',
     own,
     placeholder: h.placeholder,
     status: h.status === 'active' ? 'im Training' : 'im Ruhestand',
@@ -429,10 +439,13 @@ export function horseProfile(g: GameState, horseId: string): HorseProfileView {
       surface: conditionRows(h.stats.bySurface, (k) => (k === 'turf' ? 'Rasen' : 'Allwetter')),
       track: conditionRows(h.stats.byTrack, (k) => g.tracks[k]?.name ?? k),
       stall: conditionRows(h.stats.byStall),
-      jockey: conditionRows(h.stats.byJockey, (k) => g.jockeys[k]?.name ?? k),
+      jockey: conditionRows(h.stats.byJockey, (k) => g.staff[k]?.name ?? k),
       layoff: conditionRows(h.stats.byLayoff),
     },
     upcoming: own ? upcomingEntries(g, h.id) : [],
+    market: horseMarketInfo(g, h),
+    figurePrecision: figurePrecision(g),
+    riskExact: Object.values(g.staff).some((x) => x.role === 'vet' && x.contract?.stableId === g.playerStableId),
   };
 }
 
@@ -571,6 +584,11 @@ export interface CardRunner {
   odds: string;
   isPlayer: boolean;
   tactic: Tactic;
+  /** Gewichtserlaubnis des Nachwuchsjockeys */
+  allowance: number;
+  /** Marktwert (für Claiming-Entscheidungen) */
+  value: number | null;
+  claimedByMe: boolean;
 }
 
 export interface ResultRow {
@@ -594,6 +612,7 @@ export interface ResultRow {
   topSpeed: number;
   distanceRunM: number;
   isPlayer: boolean;
+  claimedBy: StableRef | null;
 }
 
 export interface RaceCardView {
@@ -621,6 +640,9 @@ export interface RaceCardView {
   winningTime: number | null;
   sectionalMarks: number[];
   playerCanEnter: Array<{ horseId: string; name: string; ok: boolean; reason?: string }>;
+  claimPrice: number | null;
+  /** Claims sind jetzt möglich (Rennwoche, Starter stehen fest) */
+  claimOpen: boolean;
 }
 
 function formString(g: GameState, h: Horse): string {
@@ -653,7 +675,7 @@ export function raceCard(g: GameState, raceId: string): RaceCardView {
   if (!r) throw new Error('Rennen nicht gefunden.');
   const t = g.templates[r.templateId]!;
   const track = g.tracks[t.trackId]!;
-  const list = r.runners ?? r.entries.map((e) => ({ horseId: e.horseId, stableId: e.stableId, jockeyId: e.jockeyId, stall: null, weightLb: null, tactic: e.tactic }));
+  const list = r.runners ?? r.entries.map((e) => ({ horseId: e.horseId, stableId: e.stableId, jockeyId: e.jockeyId, stall: null, weightLb: null, allowanceLb: 0, tactic: e.tactic }));
   const horses = list.map((x) => g.horses[x.horseId]!);
   // Marktmeinung: öffentliche Daten (Rating, Figures), bei Debütanten ein grober Eindruck
   const odds = oddsFor(
@@ -666,7 +688,7 @@ export function raceCard(g: GameState, raceId: string): RaceCardView {
   const runners: CardRunner[] = list.map((x, i) => {
     const h = horses[i]!;
     const age = r.season - h.foalYear;
-    const j = x.jockeyId ? g.jockeys[x.jockeyId] : null;
+    const j = x.jockeyId ? g.staff[x.jockeyId] : null;
     return {
       horseId: h.id,
       name: h.name,
@@ -685,6 +707,9 @@ export function raceCard(g: GameState, raceId: string): RaceCardView {
       odds: odds[i]!,
       isPlayer: h.stableId === g.playerStableId,
       tactic: x.tactic,
+      allowance: x.allowanceLb,
+      value: t.claimPrice !== null ? h.value : null,
+      claimedByMe: r.claims.some((c) => c.horseId === h.id && c.stableId === g.playerStableId),
     };
   });
   let result: ResultRow[] | null = null;
@@ -696,7 +721,7 @@ export function raceCard(g: GameState, raceId: string): RaceCardView {
         horseId: run.horseId,
         name: g.horses[run.horseId]!.name,
         stable: stableRef(g, run.stableId),
-        jockeyName: g.jockeys[run.jockeyId]?.name ?? '',
+        jockeyName: g.staff[run.jockeyId]?.name ?? '',
         stall: run.stall,
         weight: formatWeight(run.weightLb),
         timeS: run.timeS,
@@ -712,6 +737,7 @@ export function raceCard(g: GameState, raceId: string): RaceCardView {
         topSpeed: run.topSpeed,
         distanceRunM: run.distanceRunM,
         isPlayer: run.stableId === g.playerStableId,
+        claimedBy: run.claimedBy ? stableRef(g, run.claimedBy) : null,
       };
     });
   }
@@ -741,6 +767,8 @@ export function raceCard(g: GameState, raceId: string): RaceCardView {
     winningTime: r.winningTimeS,
     sectionalMarks: result?.[0]?.sectionals.map((s) => s.atM) ?? [],
     playerCanEnter: mine.map((h) => ({ horseId: h.id, name: h.name, ...canEnter(g, r.id, h.id) })),
+    claimPrice: t.claimPrice,
+    claimOpen: t.claimPrice !== null && r.status === 'closed' && r.weekIndex === g.weekIndex,
   };
 }
 
@@ -824,10 +852,19 @@ function round1(x: number): number {
 export interface JockeyView {
   id: string;
   name: string;
+  /** Einstufung in halben Sternen */
   rating: number;
   fee: number;
+  weightLb: number;
+  weight: string;
+  /** Gewichtserlaubnis als Nachwuchsjockey (lb) */
+  allowance: number;
+  age: number;
+  careerWins: number;
   rides: number;
   wins: number;
+  stable: StableRef | null;
+  suspendedUntilWeek: number | null;
   placeholder: boolean;
 }
 
@@ -840,17 +877,27 @@ export function jockeyList(g: GameState): JockeyView[] {
     if (r.position === 1) x.wins++;
     stats.set(r.jockeyId, x);
   }
-  return Object.values(g.jockeys)
-    .map((j) => ({
-      id: j.id,
-      name: j.name,
-      // Spieler sieht eine gerundete Gesamteinschätzung, nicht die Einzelwerte
-      rating: Math.round(((j.tactics + j.pace + j.finishing) / 3) * 20) / 2,
-      fee: j.fee,
-      rides: stats.get(j.id)?.rides ?? 0,
-      wins: stats.get(j.id)?.wins ?? 0,
-      placeholder: j.placeholder,
-    }))
+  return activeJockeys(g)
+    .map((j) => {
+      const jp = j.jockey!;
+      return {
+        id: j.id,
+        name: j.name,
+        // Spieler sieht eine gerundete Gesamteinschätzung, nicht die Einzelwerte
+        rating: stars(j),
+        fee: jp.fee,
+        weightLb: jp.weightLb,
+        weight: formatWeight(jp.weightLb),
+        allowance: apprenticeAllowance(j),
+        age: j.age,
+        careerWins: jp.careerWins,
+        rides: stats.get(j.id)?.rides ?? 0,
+        wins: stats.get(j.id)?.wins ?? 0,
+        stable: j.contract ? stableRef(g, j.contract.stableId) : null,
+        suspendedUntilWeek: isSuspended(j, g.weekIndex) ? (jp.suspendedUntilWeekIndex! % 52) + 1 : null,
+        placeholder: j.placeholder,
+      };
+    })
     .sort((a, b) => b.wins - a.wins || b.rating - a.rating);
 }
 
@@ -896,4 +943,35 @@ export function runLinks(g: GameState, runIds: string[]): RunLink[] {
       position: r.position,
       speedFigure: r.speedFigure,
     }));
+}
+
+// ---------------------------------------------------------------- Datenanalyst
+
+const FIG_NUM_KEYS = new Set(['speedFigure', 'meanFigure', 'figureSd', 'formTrend', 'consistencyIndex']);
+
+/**
+ * Sicht des Spielers auf Speed Figures und Sectionals: ohne Datenanalyst verborgen,
+ * mit schwachem Analysten gerundet (5 oder 2 lb), mit gutem Analysten exakt.
+ */
+export function applyAnalyst<T>(g: GameState, dto: T): T {
+  const p = figurePrecision(g);
+  if (p === 1) return dto;
+  const round = (v: number) => Math.round(v / p) * p;
+  const walk = (x: unknown): unknown => {
+    if (Array.isArray(x)) return x.map(walk);
+    if (!x || typeof x !== 'object') return x;
+    const out: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(x as Record<string, unknown>)) {
+      if ((FIG_NUM_KEYS.has(k) || k === 'bestFigure') && typeof v === 'number') out[k] = p === 0 ? null : round(v);
+      else if ((k === 'bestFigure' || k === 'lastFigure') && v && typeof v === 'object' && 'value' in v) {
+        out[k] = p === 0 ? null : { ...(v as object), value: round((v as { value: number }).value) };
+      } else if (k === 'lastFigures' && Array.isArray(v)) {
+        out[k] = p === 0 ? [] : v.map((f: { value: number }) => ({ ...f, value: round(f.value) }));
+      } else if ((k === 'sectionals' || k === 'speedCurve') && Array.isArray(v)) out[k] = p === 0 ? [] : v;
+      else if ((k === 'finishingSpeedPct' || k === 'avgFinishingSpeed') && typeof v === 'number') out[k] = p === 0 ? null : v;
+      else out[k] = walk(v);
+    }
+    return out;
+  };
+  return walk(dto) as T;
 }

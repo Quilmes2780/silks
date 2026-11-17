@@ -153,6 +153,7 @@ function featureTemplate(f: FeatureRace, track: Track, surface: Surface, season:
     entryFee: entryFee(f.prize),
     maxRunners: f.maxRunners ?? maxRunnersFor(track, f.raceClass, surface),
     feature: true,
+    claimPrice: null,
   };
   void season;
 }
@@ -181,9 +182,10 @@ function genericTemplate(
   rng: Rng,
 ): RaceTemplate {
   const distanceM = rng.pick(g.distances);
+  const claimPrice = g.claimPrices?.length ? rng.pick(g.claimPrices) : null;
   const isHcp = g.raceClass === 'Handicap';
   const ageLabel = g.ageMax === 2 ? ' (2yo)' : g.ageMin === 3 && g.ageMax === 3 ? ' (3yo)' : '';
-  const classLabel = isHcp ? ` (Class ${g.bhaClass})` : '';
+  const classLabel = isHcp ? ` (Class ${g.bhaClass})` : claimPrice !== null ? ` (£${claimPrice.toLocaleString('en-GB')})` : '';
   return {
     id: `${meetingId}-${k}`,
     name: `${track.name} ${g.name}${classLabel}${g.key === 'nursery' ? '' : ageLabel}`,
@@ -208,6 +210,7 @@ function genericTemplate(
     entryFee: entryFee(g.prize),
     maxRunners: maxRunnersFor(track, g.raceClass, surface),
     feature: false,
+    claimPrice,
   };
   void season;
 }

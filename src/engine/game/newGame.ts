@@ -1,14 +1,18 @@
 import { Rng } from '../rng';
 import { generateHorse, generateColour, generateMarkings } from '../horse/generate';
 import { ageAt, ceilingAttributes, PEAK_AGE } from '../horse/maturity';
-import type { Attributes, Horse, Jockey, Silks, SilksPattern, Stable, Trainer } from '../types';
+import type { Attributes, Facilities, Horse, Silks, SilksPattern, Stable, Staff } from '../types';
 import { ATTR_KEYS } from '../types';
 import { NameRegistry, PersonNameRegistry, stableName } from '../world/names';
 import type { RawHorse, WorldData } from '../world/load';
-import { addInbox, DEFAULT_CONFIG, type GameConfig, type GameState, weekIndexOf } from './state';
+import { addInbox, DEFAULT_CONFIG, type GameConfig, type GameState, horseAccount, MARKET_STABLE_ID, sortedById, weekIndexOf } from './state';
 import { beginWeek, ensureCalendars } from './week';
 import { aiMakeEntries, estimateLevel } from '../ai/ai';
 import { clampOr } from '../stats/rating';
+import { generateStaff, newStaffId, refreshStaffPool, salaryDemand, signContract, staffSkill } from '../staff/staff';
+import { assignPedigree, generateStallions } from '../economy/stallions';
+import { recordBalance } from '../economy/finance';
+import { updateValues } from '../economy/value';
 
 export interface NewGameOptions {
   id: string;
@@ -39,7 +43,49 @@ export function randomSilks(rng: Rng): Silks {
   };
 }
 
-const clamp01 = (x: number) => Math.max(0.05, Math.min(0.98, x));
+const clamp = (x: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, x));
+
+export const PLAYER_FACILITIES: Facilities = { boxes: 12, pool: false, hill: false, clinic: false };
+
+export function aiFacilities(q: number): Facilities {
+  return { boxes: 60, pool: true, hill: true, clinic: q > 66 };
+}
+
+export function marketStable(): Stable {
+  return {
+    id: MARKET_STABLE_ID,
+    name: 'Züchter und Verkäufer',
+    kind: 'market',
+    isPlayer: false,
+    silks: { pattern: 'plain', body: '#9e9e9e', pattern2: '#9e9e9e', sleeves: '#9e9e9e', cap: '#9e9e9e' },
+    trainerId: '',
+    strategy: 'balanced',
+    balance: 0,
+    reputation: 0,
+    facilities: { boxes: 0, pool: false, hill: false, clinic: false },
+    staffQuality: 0.5,
+    source: 'generated',
+    placeholder: false,
+  };
+}
+
+/** Startteam des Spielers neben dem Cheftrainer: ein Pfleger, ein Arbeitsreiter, ein junger Analyst. */
+export function hireStarterTeam(g: GameState, r: Rng, people: PersonNameRegistry): Staff[] {
+  const team: Staff[] = [];
+  const spec: Array<[Staff['role'], number, number]> = [
+    ['groom', 0.5, 34],
+    ['work_rider', 0.5, 27],
+    ['analyst', 0.36, 24],
+  ];
+  for (const [role, skill, age] of spec) {
+    const s = generateStaff(r.fork(role), role, newStaffId(g), people.personName(r), { skill, age });
+    s.potential = Math.max(s.potential, skill + 0.15);
+    g.staff[s.id] = s;
+    signContract(g, s, g.playerStableId, { weeklySalary: salaryDemand(s), years: 2 });
+    team.push(s);
+  }
+  return team;
+}
 
 export function createGame(o: NewGameOptions): GameState {
   const config: GameConfig = { ...DEFAULT_CONFIG, ...o.config };
@@ -48,7 +94,7 @@ export function createGame(o: NewGameOptions): GameState {
   const week = o.startWeek ?? 10;
   const world = o.world;
   const g: GameState = {
-    version: 1,
+    version: 2,
     id: o.id,
     name: o.name,
     createdAt: o.createdAt,
@@ -66,134 +112,140 @@ export function createGame(o: NewGameOptions): GameState {
     horses: {},
     runs: {},
     stables: {},
-    jockeys: {},
-    trainers: {},
+    staff: {},
+    stallions: {},
+    auctions: {},
+    offers: [],
+    finance: { balanceHistory: [], overdraftWeeks: 0, horses: {} },
     inbox: [],
     ledger: [],
-    counters: { horse: 0, run: 0, msg: 0 },
+    counters: { horse: 0, run: 0, msg: 0, staff: 0, offer: 0, lot: 0 },
     calendarSeasons: [],
     lastSummary: null,
+    touchedHorses: [],
+    touchedRaces: [],
   };
   g.weekIndex = weekIndexOf(g, season, week);
 
-  const people = new PersonNameRegistry([
-    ...world.trainers.map((t) => t.name),
-    ...world.jockeys.map((j) => j.name),
-  ]);
+  const people = new PersonNameRegistry([...world.trainers.map((t) => t.name), ...world.jockeys.map((j) => j.name)]);
   const names = new NameRegistry(world.horses.map((h) => h.name));
   const usedStableNames = new Set<string>(world.stables.map((s) => s.name));
+  const sr = rng.fork('stables');
 
-  // ---- Trainer ----
+  // ---- Trainer aus der Weltdatei ----
   for (const t of world.trainers) {
-    g.trainers[t.id] = {
-      id: t.id,
-      name: t.name,
-      skill: t.skill,
-      insight: t.insight,
-      specialty: t.specialty ?? 'none',
-      source: 'world',
-      placeholder: t.placeholder ?? false,
-    };
+    const s = generateStaff(sr.fork('world-trainer', t.id), 'head_trainer', t.id, t.name, { skill: t.skill });
+    s.trainer = { insight: t.insight, specialty: t.specialty ?? 'none' };
+    s.source = 'world';
+    s.placeholder = t.placeholder ?? false;
+    g.staff[s.id] = s;
   }
-  const newTrainer = (r: Rng, skill: number): Trainer => {
-    const t: Trainer = {
-      id: `t${Object.keys(g.trainers).length + 1}`,
-      name: people.personName(r),
-      skill: clamp01(skill),
-      insight: clamp01(r.normal(0.55, 0.15)),
-      specialty: r.weighted(['none', 'sprint', 'staying'] as const, [3, 1, 1]),
-      source: 'generated',
-      placeholder: false,
-    };
-    g.trainers[t.id] = t;
-    return t;
+  const newTrainer = (r: Rng, skill: number): Staff => {
+    const s = generateStaff(r, 'head_trainer', newStaffId(g), people.personName(r), { skill: clamp(skill, 0.05, 0.98) });
+    g.staff[s.id] = s;
+    return s;
   };
 
   // ---- Spielerstall ----
   const pr = rng.fork('player');
   const playerTrainer = newTrainer(pr, 0.55);
-  playerTrainer.insight = 0.55;
+  playerTrainer.trainer = { insight: 0.55, specialty: 'none' };
   g.stables.player = {
     id: 'player',
     name: o.stableName?.trim() || 'Mein Rennstall',
+    kind: 'player',
     isPlayer: true,
     silks: o.silks ?? randomSilks(pr),
     trainerId: playerTrainer.id,
     strategy: 'player',
     balance: config.startBalance,
+    reputation: 25,
+    facilities: { ...PLAYER_FACILITIES },
+    staffQuality: 0,
     source: 'generated',
     placeholder: false,
   };
+  signContract(g, playerTrainer, 'player', { weeklySalary: salaryDemand(playerTrainer), years: 2 });
+  g.stables[MARKET_STABLE_ID] = marketStable();
 
   // ---- KI-Ställe: zuerst aus der Weltdatei, Rest generiert ----
   const stableQuality: Record<string, number> = {};
-  const sr = rng.fork('stables');
+  const aiStable = (id: string, name: string, silks: Silks, trainerId: string, strategy: Stable['strategy'], q: number, source: Stable['source'], placeholder: boolean): Stable => ({
+    id,
+    name,
+    kind: 'ai',
+    isPlayer: false,
+    silks,
+    trainerId,
+    strategy,
+    balance: 1_000_000 + Math.round(q * 20000),
+    reputation: Math.round(clamp(30 + (q - 55) * 2.5, 10, 90)),
+    facilities: aiFacilities(q),
+    staffQuality: Math.round(clamp(0.5 + (q - 64) / 20 + sr.normal(0, 0.08), 0.25, 0.85) * 100) / 100,
+    source,
+    placeholder,
+  });
   for (const s of world.stables) {
-    g.stables[s.id] = {
-      id: s.id,
-      name: s.name,
-      isPlayer: false,
-      silks: s.silks,
-      trainerId: s.trainerId,
-      strategy: s.strategy ?? 'balanced',
-      balance: 2_000_000,
-      source: 'world',
-      placeholder: s.placeholder ?? false,
-    };
-    stableQuality[s.id] = sr.normal(62, 4);
+    const q = sr.normal(62, 4);
+    g.stables[s.id] = aiStable(s.id, s.name, s.silks, s.trainerId, s.strategy ?? 'balanced', q, 'world', s.placeholder ?? false);
+    g.stables[s.id]!.balance = 2_000_000;
+    stableQuality[s.id] = q;
   }
   let k = 0;
-  while (Object.values(g.stables).filter((s) => !s.isPlayer).length < config.aiStables) {
+  while (Object.values(g.stables).filter((s) => s.kind === 'ai').length < config.aiStables) {
     k++;
     const q = sr.normal(64, 4);
     const trainer = newTrainer(sr, 0.45 + (q - 55) / 30 + sr.normal(0, 0.08));
     const id = `ai${k}`;
-    g.stables[id] = {
+    g.stables[id] = aiStable(
       id,
-      name: stableName(sr, usedStableNames),
-      isPlayer: false,
-      silks: randomSilks(sr),
-      trainerId: trainer.id,
-      strategy: sr.weighted(['balanced', 'sprint', 'staying'] as const, [4, 1, 1]),
-      balance: 1_000_000 + Math.round(q * 20000),
-      source: 'generated',
-      placeholder: false,
-    };
+      stableName(sr, usedStableNames),
+      randomSilks(sr),
+      trainer.id,
+      sr.weighted(['balanced', 'sprint', 'staying', 'trader'] as const, [4, 1, 1, 0.6]),
+      q,
+      'generated',
+      false,
+    );
     stableQuality[id] = q;
+  }
+  for (const st of Object.values(g.stables)) {
+    if (st.kind !== 'ai') continue;
+    const t = g.staff[st.trainerId];
+    if (t && !t.contract) signContract(g, t, st.id, { weeklySalary: salaryDemand(t), years: 1 + sr.int(0, 2) });
   }
 
   // ---- Jockeys ----
   for (const j of world.jockeys) {
-    g.jockeys[j.id] = {
-      id: j.id,
-      name: j.name,
-      tactics: j.tactics,
-      pace: j.pace,
-      finishing: j.finishing,
-      weightLb: j.weightLb ?? 118,
-      fee: j.fee ?? 160,
-      source: 'world',
-      placeholder: j.placeholder ?? false,
-    };
+    const s = generateStaff(sr.fork('world-jockey', j.id), 'jockey', j.id, j.name, { skill: (j.tactics + j.pace + j.finishing) / 3, apprentice: false });
+    s.jockey = { tactics: j.tactics, pace: j.pace, finishing: j.finishing, weightLb: j.weightLb ?? 116, fee: j.fee ?? 160, careerWins: 300, suspendedUntilWeekIndex: null, suspensions: 0 };
+    s.source = 'world';
+    s.placeholder = j.placeholder ?? false;
+    g.staff[s.id] = s;
   }
   const jr = rng.fork('jockeys');
   let jn = 0;
-  while (Object.keys(g.jockeys).length < config.jockeys) {
+  while (Object.values(g.staff).filter((s) => s.role === 'jockey').length < config.jockeys) {
     jn++;
-    const base = jr.normal(0.6, 0.13);
-    const jk: Jockey = {
-      id: `j${jn}`,
-      name: people.personName(jr),
-      tactics: clamp01(base + jr.normal(0, 0.07)),
-      pace: clamp01(base + jr.normal(0, 0.07)),
-      finishing: clamp01(base + jr.normal(0, 0.07)),
-      weightLb: Math.round(jr.range(112, 124)),
-      fee: 160,
-      source: 'generated',
-      placeholder: false,
-    };
-    g.jockeys[jk.id] = jk;
+    const apprentice = jr.chance(0.25);
+    const s = generateStaff(jr.fork(jn), 'jockey', `j${jn}`, people.personName(jr), { skill: jr.normal(apprentice ? 0.5 : 0.62, 0.12), apprentice });
+    g.staff[s.id] = s;
   }
+  // Die stärksten KI-Ställe binden die besten Jockeys als Stalljockey
+  const topStables = sortedById(Object.values(g.stables))
+    .filter((s) => s.kind === 'ai')
+    .sort((a, b) => (stableQuality[b.id] ?? 0) - (stableQuality[a.id] ?? 0))
+    .slice(0, 8);
+  const bestJockeys = sortedById(Object.values(g.staff))
+    .filter((s) => s.role === 'jockey')
+    .sort((a, b) => staffSkill(b) - staffSkill(a));
+  topStables.forEach((st, i) => {
+    const j = bestJockeys[i];
+    if (j) signContract(g, j, st.id, { weeklySalary: salaryDemand(j), years: 1 + (i % 3) });
+  });
+
+  // ---- Deckhengste ----
+  generateStallions(g, rng.fork('stallions'), names);
 
   // ---- Pferde aus der Weltdatei ----
   const hr = rng.fork('horses');
@@ -204,8 +256,8 @@ export function createGame(o: NewGameOptions): GameState {
 
   // ---- Generierte Pferde für KI-Ställe ----
   const ageMix = [2, 2, 2, 3, 3, 3, 4, 4, 5, 6];
-  for (const s of Object.values(g.stables)) {
-    if (s.isPlayer) continue;
+  for (const s of sortedById(Object.values(g.stables))) {
+    if (s.kind !== 'ai') continue;
     const have = Object.values(g.horses).filter((h) => h.stableId === s.id).length;
     const sq = stableQuality[s.id] ?? 60;
     const r = hr.fork('stable', s.id);
@@ -243,23 +295,43 @@ export function createGame(o: NewGameOptions): GameState {
     g.horses[h.id] = h;
   }
 
-  // ---- Bilanz vor Spielbeginn und Start-Ratings ----
+  // ---- Abstammung, Vorgeschichte und Start-Ratings ----
+  const pedr = rng.fork('pedigree');
+  for (const h of sortedById(Object.values(g.horses))) if (!h.sireName) assignPedigree(g, h, pedr.fork(h.id), names);
   const rr = rng.fork('records');
   for (const h of Object.values(g.horses)) seedRecord(h, rr.fork(h.id), season);
 
+  // ---- Personal des Spielers und Bewerberpool ----
+  const team = hireStarterTeam(g, rng.fork('team'), people);
+  const groom = team.find((s) => s.role === 'groom')!;
+  const mine = sortedById(Object.values(g.horses)).filter((h) => h.stableId === 'player');
+  mine.slice(0, 4).forEach((h) => {
+    h.groomId = groom.id;
+    h.groomBond = 40;
+  });
+  for (const h of mine) horseAccount(g, h.id);
+  refreshStaffPool(g, rng.fork('pool'), true);
+
+  updateValues(g);
+  for (const h of Object.values(g.horses)) h.valueHistory = h.value ? [{ weekIndex: g.weekIndex, value: h.value }] : [];
   ensureCalendars(g);
   aiMakeEntries(g, true);
   beginWeek(g);
+  recordBalance(g, g.weekIndex - 1);
+  g.touchedHorses = [];
   addInbox(g, {
     kind: 'info',
     title: `Willkommen bei ${g.stables.player!.name}`,
     body:
-      `Dein Stall hat ${config.playerHorses} Pferde im Training. So geht es los:\n` +
+      `Dein Stall hat ${config.playerHorses} Pferde im Training und ${PLAYER_FACILITIES.boxes} Boxen. So geht es los:\n` +
       '1. Im Stall die Pferde ansehen – die Werte sind Schätzungen deines Trainers.\n' +
       '2. Im Rennkalender passende Rennen suchen und nennen (Nennschluss beachten).\n' +
       '3. In der Rennwoche unter „Renntag“ Taktik und Jockey festlegen.\n' +
       '4. „Woche abschließen“ – danach Rennansicht, Ergebnis und Sectionals ansehen.\n' +
-      'Erst nach drei Starts bekommt ein Pferd ein Official Rating und darf in Handicaps laufen.',
+      'Erst nach drei Starts bekommt ein Pferd ein Official Rating und darf in Handicaps laufen.\n\n' +
+      `Personal: Cheftrainer ${playerTrainer.name}, Pfleger ${groom.name} (betreut 4 Pferde), ein Arbeitsreiter und ein junger Datenanalyst. ` +
+      'Zwei Pferde haben noch keinen Pfleger – unter „Personal“ kannst du weitere Leute einstellen. ' +
+      'Gehälter und Unterhalt kosten jede Woche Geld; Einnahmen kommen aus Preisgeld und Verkäufen (Markt).',
   });
   return g;
 }

@@ -108,6 +108,8 @@ export function raceLevel(t: RaceTemplate): number {
         return 70;
       case 'Maiden':
         return 62;
+      case 'Claiming':
+        return 58;
     }
   })();
   // Altersbeschränkte Rennen: die Jüngeren sind physisch noch nicht ausgereift

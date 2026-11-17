@@ -340,6 +340,29 @@
       "prize": 4000
     },
     {
+      "key": "clm",
+      "name": "Claiming Stakes",
+      "raceClass": "Claiming",
+      "bhaClass": 5,
+      "ageMin": 3,
+      "ageMax": null,
+      "weight": 1.2,
+      "distances": [
+        1006,
+        1207,
+        1408,
+        1609,
+        2012
+      ],
+      "prize": 5000,
+      "claimPrices": [
+        5000,
+        8000,
+        12000,
+        16000
+      ]
+    },
+    {
       "key": "cond",
       "name": "Conditions Stakes",
       "raceClass": "Conditions",

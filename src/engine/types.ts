@@ -142,11 +142,29 @@ export interface Horse {
   stats: HorseStats;
   /** Feste z-Werte für die Schätzung (der Spieler sieht nie die echten Werte). */
   estimateNoise: Attributes;
-  /** Marktwert (Phase 3) */
+  /** Aktueller Marktwert in £ (öffentliche Einschätzung des Markts) */
   value: number | null;
+  /** Marktwertverlauf */
+  valueHistory: ValuePoint[];
+  /** Öffentlicher Eindruck vom Körperbau (1–100, verrauscht) – für Pferde ohne Rennleistung */
+  conformation: number;
+  /** Pfleger und Bindung (0–100) */
+  groomId: string | null;
+  groomBond: number;
+  /** Kauf durch den jetzigen Besitzer */
+  purchase: { price: number; weekIndex: number; fromStableId: string | null; via: PurchaseVia } | null;
+  /** Zum Verkauf angeboten */
+  forSale: { askingPrice: number; sinceWeekIndex: number } | null;
   source: 'world' | 'generated';
   placeholder: boolean;
 }
+
+export interface ValuePoint {
+  weekIndex: number;
+  value: number;
+}
+
+export type PurchaseVia = 'auction' | 'transfer' | 'claim' | 'forced_sale';
 
 /** Ein Kennzahlwert mit Verweis auf den Start, aus dem er stammt. */
 export interface FigureRef {
@@ -222,7 +240,8 @@ export type RaceClass =
   | 'Handicap'
   | 'Conditions'
   | 'Novice'
-  | 'Maiden';
+  | 'Maiden'
+  | 'Claiming';
 
 export type SexRestriction = 'open' | 'fillies' | 'colts_fillies' | 'colts_geldings';
 
@@ -258,6 +277,8 @@ export interface RaceTemplate {
   entryFee: number;
   maxRunners: number;
   feature: boolean;
+  /** Claiming-Rennen: fester Preis, zu dem jedes Pferd gekauft werden kann */
+  claimPrice: number | null;
 }
 
 export type TacticPosition = 'natural' | RunStyle;
@@ -280,8 +301,19 @@ export interface Runner {
   stableId: string;
   jockeyId: string;
   stall: number;
+  /** getragenes Gewicht inkl. Erlaubnis des Nachwuchsjockeys und Übergewicht */
   weightLb: number;
+  /** Gewichtserlaubnis des Nachwuchsjockeys (lb) */
+  allowanceLb: number;
+  /** zugeteiltes Gewicht laut Ausschreibung bzw. Handicap */
+  assignedLb: number;
   tactic: Tactic;
+}
+
+export interface Claim {
+  stableId: string;
+  horseId: string;
+  weekIndex: number;
 }
 
 export interface RaceInstance {
@@ -300,6 +332,8 @@ export interface RaceInstance {
   status: 'open' | 'closed' | 'run' | 'void';
   resultRunIds: string[];
   winningTimeS: number | null;
+  /** Claiming-Rennen: abgegebene Claims */
+  claims: Claim[];
   /** Eingefrorene Simulationseingaben – ein Replay ist eine deterministische Neusimulation */
   replayInput?: Omit<SimInput, 'record'>;
 }
@@ -373,6 +407,8 @@ export interface Run {
   finishingSpeedPct: number;
   officialRatingBefore: number | null;
   prize: number;
+  /** Claiming-Rennen: das Pferd wurde nach dem Rennen von diesem Stall gekauft */
+  claimedBy?: string;
 }
 
 export type SilksPattern =
@@ -395,61 +431,211 @@ export interface Silks {
   cap: string;
 }
 
+export interface Facilities {
+  /** Boxenkapazität */
+  boxes: number;
+  /** Schwimmbecken: bessere Erholung und Verletzungsvorbeugung */
+  pool: boolean;
+  /** Bergstrecke: volles Bergtraining */
+  hill: boolean;
+  /** Tierklinik: schnellere Heilung, Früherkennung */
+  clinic: boolean;
+}
+
 export interface Stable {
   id: string;
   name: string;
+  /** player = Spieler, ai = KI-Stall, market = Züchter/Verkäufer (nur Auktionen) */
+  kind: 'player' | 'ai' | 'market';
   isPlayer: boolean;
   silks: Silks;
+  /** Cheftrainer (Staff-ID) */
   trainerId: string;
-  strategy: 'balanced' | 'sprint' | 'staying' | 'player';
+  strategy: 'balanced' | 'sprint' | 'staying' | 'trader' | 'player';
   balance: number;
+  /** 0–100, aus dem Erfolg der letzten 52 Wochen */
+  reputation: number;
+  facilities: Facilities;
+  /** KI: Qualität des nicht einzeln modellierten Personals (0–1) */
+  staffQuality: number;
   source: 'world' | 'generated';
   placeholder: boolean;
 }
 
-export interface Jockey {
-  id: string;
-  name: string;
+export type StaffRole =
+  | 'head_trainer'
+  | 'assistant_trainer'
+  | 'jockey'
+  | 'work_rider'
+  | 'groom'
+  | 'vet'
+  | 'farrier'
+  | 'agent'
+  | 'analyst';
+
+export const STAFF_ROLES: readonly StaffRole[] = [
+  'head_trainer',
+  'assistant_trainer',
+  'jockey',
+  'work_rider',
+  'groom',
+  'vet',
+  'farrier',
+  'agent',
+  'analyst',
+];
+
+export interface Contract {
+  stableId: string;
+  weeklySalary: number;
+  /** Erfolgsbeteiligung am Preisgeld (0–0,15), für Trainer und Jockeys */
+  prizeShare: number;
+  startWeekIndex: number;
+  /** Vertrag läuft bis zum Ende dieser Saison */
+  endSeason: number;
+}
+
+export interface JockeyProfile {
   /** 0–1 */
   tactics: number;
   pace: number;
   finishing: number;
+  /** Mindestgewicht in lb */
   weightLb: number;
+  /** Reitgebühr je Ritt */
   fee: number;
+  /** Siege in der Karriere (bestimmt die Erlaubnis für Nachwuchsjockeys) */
+  careerWins: number;
+  suspendedUntilWeekIndex: number | null;
+  suspensions: number;
+}
+
+export interface TrainerProfile {
+  /** 0–1 Prognosegenauigkeit */
+  insight: number;
+  specialty: 'none' | 'sprint' | 'staying';
+}
+
+export interface Staff {
+  id: string;
+  name: string;
+  role: StaffRole;
+  age: number;
+  /** Fachkönnen 0–1 (verborgen, der Spieler sieht eine Einstufung) */
+  skill: number;
+  /** Entwicklungsgrenze 0–1 */
+  potential: number;
+  /** 0–100 */
+  experience: number;
+  /** 0–100 */
+  morale: number;
+  jockey?: JockeyProfile;
+  trainer?: TrainerProfile;
+  contract: Contract | null;
+  /** angekündigter Abgang */
+  leaving: { weekIndex: number; reason: 'resign' | 'poached' | 'retire' | 'contract_end'; toStableId: string | null } | null;
+  /** nach einer Absage erst wieder ansprechbar ab */
+  blockedUntilWeekIndex: number | null;
   source: 'world' | 'generated';
   placeholder: boolean;
 }
 
-export interface Trainer {
+/** Deckhengst des generierten Registers (Abstammung für Jährlinge bis Phase 4). */
+export interface Stallion {
   id: string;
   name: string;
-  /** 0–1 Trainingseffizienz */
-  skill: number;
-  /** 0–1 Prognosegenauigkeit */
-  insight: number;
-  specialty: 'none' | 'sprint' | 'staying';
-  source: 'world' | 'generated';
-  placeholder: boolean;
+  foalYear: number;
+  /** Decktaxe in £ (öffentlich) */
+  fee: number;
+  /** verborgene Vererbungsqualität (Attributskala) */
+  quality: number;
+  distOptM: number;
+  going: number;
+  active: boolean;
+}
+
+export type AuctionKind = 'breeze_up' | 'yearling' | 'horses_in_training';
+
+export interface Lot {
+  id: string;
+  horseId: string;
+  consignorId: string;
+  reserve: number;
+  /** Breeze-up: gemessene Zeit über 2 Furlongs (s) */
+  breezeTimeS: number | null;
+  status: 'pending' | 'sold' | 'unsold' | 'withdrawn';
+  price: number | null;
+  buyerId: string | null;
+  currentBid: number;
+  leaderId: string | null;
+  /** Höchstgebote der KI-Ställe (verborgen) */
+  aiMax: Array<{ stableId: string; max: number }>;
+  /** Auto-Gebot des Spielers bis zu diesem Limit */
+  playerLimit: number | null;
+}
+
+export interface Auction {
+  id: string;
+  kind: AuctionKind;
+  name: string;
+  season: number;
+  week: number;
+  weekIndex: number;
+  lots: Lot[];
+  status: 'catalogue' | 'live' | 'done';
+}
+
+export interface TransferOffer {
+  id: string;
+  horseId: string;
+  buyerId: string;
+  sellerId: string;
+  amount: number;
+  /** Gegenangebot der Gegenseite */
+  counter: number | null;
+  status: 'open' | 'countered' | 'accepted' | 'declined' | 'expired' | 'withdrawn';
+  createdWeekIndex: number;
+  expiresWeekIndex: number;
+  rounds: number;
+  /** verborgenes Limit der KI (bei Angeboten der KI für Spielerpferde) */
+  limit: number | null;
 }
 
 export interface InboxMessage {
   id: string;
   season: number;
   week: number;
-  kind: 'injury' | 'result' | 'deadline' | 'trainer' | 'season' | 'info';
+  kind: 'injury' | 'result' | 'deadline' | 'trainer' | 'season' | 'info' | 'staff' | 'market' | 'finance';
   title: string;
   body: string;
   horseId?: string;
   raceId?: string;
+  staffId?: string;
   read: boolean;
 }
+
+export type LedgerKind =
+  | 'prize'
+  | 'sale'
+  | 'purchase'
+  | 'entry_fee'
+  | 'jockey_fee'
+  | 'prize_share'
+  | 'salary'
+  | 'upkeep'
+  | 'vet'
+  | 'facility'
+  | 'interest'
+  | 'other';
 
 export interface LedgerEntry {
   season: number;
   week: number;
+  weekIndex: number;
   amount: number;
-  kind: 'prize' | 'entry_fee' | 'jockey_fee' | 'training' | 'other';
+  kind: LedgerKind;
   text: string;
   raceId?: string;
   horseId?: string;
+  staffId?: string;
 }

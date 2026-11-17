@@ -49,6 +49,19 @@ export interface WeekTrainingContext {
   trainerSkill: number;
   /** Rennen in dieser Woche gelaufen (Distanz in m) – ersetzt einen Trainingstag */
   racedDistanceM: number | null;
+  /** Personal und Anlage (Standard: neutral wie in Phase 2) */
+  trainingFactor?: number;
+  riskFactor?: number;
+  healFactor?: number;
+  /** Erholungsbonus des Pflegers (Frische/Woche) */
+  freshBonus?: number;
+  /** Temperamentsentwicklung durch den Pfleger (Anteil der Lücke je Woche) */
+  temperamentBonus?: number;
+  /** Bergstrecke vorhanden (sonst 60 % Wirkung) */
+  hill?: boolean;
+  /** Schwimmbecken vorhanden (sonst Weide) */
+  pool?: boolean;
+  specialty?: 'none' | 'sprint' | 'staying';
 }
 
 export interface TrainingOutcome {
@@ -77,13 +90,18 @@ export function weeklyTraining(h: Horse, rng: Rng, ctx: WeekTrainingContext): Tr
   let freshDelta = FRESH_RECOVERY;
   let load = 0;
   const gains: Partial<Record<AttrKey, number>> = {};
+  const hill = ctx.hill ?? true;
+  const pool = ctx.pool ?? true;
   for (const b of days) {
     const def = BLOCKS[b];
     fitnessGain += def.fitness;
-    freshDelta += def.fresh;
-    load += def.load;
-    for (const [k, v] of Object.entries(def.gain) as [AttrKey, number][]) gains[k] = (gains[k] ?? 0) + v;
+    // Ohne Schwimmbecken nur Weide: weniger Erholung und Entlastung
+    freshDelta += b === 'swim' && !pool ? 3 : def.fresh;
+    load += b === 'swim' && !pool ? -0.3 : def.load;
+    const gf = b === 'hill' && !hill ? 0.6 : 1;
+    for (const [k, v] of Object.entries(def.gain) as [AttrKey, number][]) gains[k] = (gains[k] ?? 0) + v * gf;
   }
+  freshDelta += ctx.freshBonus ?? 0;
 
   // Fitness nähert sich mit abnehmendem Ertrag 100
   c.fitness = clamp(c.fitness + fitnessGain * (1 - c.fitness / 112) - 2, 10, 100);
@@ -96,7 +114,9 @@ export function weeklyTraining(h: Horse, rng: Rng, ctx: WeekTrainingContext): Tr
 
   // Attribute Richtung Obergrenze
   const freshEff = c.freshness < 40 ? 0.5 : 1;
-  const eff = (0.6 + 0.8 * ctx.trainerSkill) * freshEff;
+  const spec = ctx.specialty ?? 'none';
+  const specialist = (spec === 'sprint' && h.prefs.distOptM < 1400) || (spec === 'staying' && h.prefs.distOptM > 2000) ? 1.08 : 1;
+  const eff = (0.6 + 0.8 * ctx.trainerSkill) * freshEff * (ctx.trainingFactor ?? 1) * specialist;
   for (const k of ATTR_KEYS) {
     const cur = h.current[k];
     const cap = ceiling[k];
@@ -117,6 +137,9 @@ export function weeklyTraining(h: Horse, rng: Rng, ctx: WeekTrainingContext): Tr
       h.current[k] = Math.min(ceiling[k], h.current[k] + (ceiling[k] - h.current[k]) * 0.04);
     }
   }
+  const tb = ctx.temperamentBonus ?? 0;
+  if (tb > 0 && h.current.temperament < ceiling.temperament) h.current.temperament += (ceiling.temperament - h.current.temperament) * tb;
+  else if (tb < 0) h.current.temperament *= 1 + tb;
   clampToCeiling(h, ceiling);
   for (const k of ATTR_KEYS) h.current[k] = Math.round(h.current[k] * 100) / 100;
 
@@ -124,10 +147,12 @@ export function weeklyTraining(h: Horse, rng: Rng, ctx: WeekTrainingContext): Tr
   const tired = Math.max(0, 45 - c.freshness) * 0.02;
   const old = Math.max(0, age - 5) * 0.15;
   const base = [0.09, 0.09, 0.06, 0.06];
-  c.legRisk = base.map((b) => round2(Math.max(0.05, b + Math.max(-0.1, load) * 0.015 + tired + old))) as [number, number, number, number];
+  const rf = ctx.riskFactor ?? 1;
+  c.legRisk = base.map((b) => round2(Math.max(0.05, (b + Math.max(-0.1, load) * 0.015 + tired + old) * rf))) as [number, number, number, number];
 
   const injury = rollInjury(rng, c.legRisk, age);
   if (injury) {
+    injury.weeks = Math.max(1, Math.round(injury.weeks * (ctx.healFactor ?? 1)));
     c.injury = { type: injury.type, leg: injury.leg, weeksRemaining: injury.weeks, sinceWeekIndex: ctx.weekIndex };
   }
   return { injury };

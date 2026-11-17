@@ -7,7 +7,7 @@
     "attr": { "type": "number", "minimum": 1, "maximum": 100 },
     "colour": { "enum": ["bay", "chestnut", "black", "grey", "brown"] },
     "hex": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" },
-    "raceClass": { "enum": ["G1", "G2", "G3", "Listed", "Heritage", "Handicap", "Conditions", "Novice", "Maiden"] },
+    "raceClass": { "enum": ["G1", "G2", "G3", "Listed", "Heritage", "Handicap", "Conditions", "Novice", "Maiden", "Claiming"] },
     "sexRestriction": { "enum": ["open", "fillies", "colts_fillies", "colts_geldings"] },
     "runStyle": { "enum": ["front", "prominent", "midfield", "held_up"] }
   }

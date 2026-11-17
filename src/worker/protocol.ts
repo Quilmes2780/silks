@@ -12,6 +12,11 @@ import type {
   TrainingInfo,
 } from '../engine/game/queries';
 import type { WeekSummary } from '../engine/game/state';
+import type { AuctionView, FacilitiesView, FinanceView, MarketView, StaffView } from '../engine/game/econQueries';
+import type { HireResult } from '../engine/game/staffCommands';
+import type { OfferResult } from '../engine/market/transfer';
+import type { BidResult } from '../engine/market/auction';
+import type { FacilityKey } from '../engine/economy/finance';
 import type { Silks, Tactic, TrainingPlan } from '../engine/types';
 
 /**
@@ -41,6 +46,13 @@ export interface NewGameParams {
   aiStables: number;
 }
 
+export interface ContractReq {
+  staffId: string;
+  weeklySalary: number;
+  years: number;
+  prizeShare?: number;
+}
+
 export interface Api {
   // Spielstände
   listSaves: { req: void; res: SaveMeta[] };
@@ -58,6 +70,23 @@ export interface Api {
   markInboxRead: { req: { ids: string[] | 'all' }; res: null };
   renameStable: { req: { name: string }; res: null };
   setSilks: { req: { silks: Silks }; res: null };
+  // Personal
+  hireStaff: { req: ContractReq; res: HireResult };
+  offerContract: { req: ContractReq; res: HireResult };
+  fireStaff: { req: { staffId: string }; res: { severance: number } };
+  assignGroom: { req: { horseId: string; groomId: string | null }; res: null };
+  upgradeFacility: { req: { key: FacilityKey }; res: null };
+  // Markt
+  makeOffer: { req: { horseId: string; amount: number }; res: OfferResult };
+  respondOffer: { req: { offerId: string; action: 'accept' | 'decline' | 'counter'; amount?: number }; res: OfferResult };
+  listForSale: { req: { horseId: string; askingPrice: number | null }; res: null };
+  bid: { req: { lotId: string; amount?: number }; res: BidResult };
+  pass: { req: { lotId: string }; res: BidResult };
+  setAutoBid: { req: { lotId: string; limit: number | null }; res: null };
+  finishAuction: { req: { auctionId: string }; res: null };
+  consign: { req: { horseId: string; auctionId: string; reserve: number }; res: null };
+  withdrawLot: { req: { horseId: string; auctionId: string }; res: null };
+  claimHorse: { req: { raceId: string; horseId: string }; res: { claimed: boolean } };
   // Abfragen
   header: { req: void; res: HeaderView };
   office: { req: void; res: OfficeView };
@@ -69,6 +98,12 @@ export interface Api {
   jockeys: { req: void; res: JockeyView[] };
   trainingInfo: { req: void; res: TrainingInfo };
   runLinks: { req: { runIds: string[] }; res: RunLink[] };
+  staff: { req: void; res: StaffView };
+  staffOfferHint: { req: { staffId: string }; res: { demand: number; mood: string } };
+  finance: { req: { season?: number }; res: FinanceView };
+  facilities: { req: void; res: FacilitiesView };
+  market: { req: void; res: MarketView };
+  auction: { req: { auctionId: string }; res: AuctionView };
 }
 
 export type ApiType = keyof Api;

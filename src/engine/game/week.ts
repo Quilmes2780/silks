@@ -1,17 +1,22 @@
 import { deriveSeed, Rng } from '../rng';
 import { aiMakeEntries, aiSetTraining } from '../ai/ai';
-import { generateHorse } from '../horse/generate';
 import { weeklyTraining, INJURY_LABEL } from '../horse/training';
 import { buildSeasonCalendar } from '../season/calendar';
 import { NameRegistry } from '../world/names';
-import type { RaceInstance } from '../types';
+import type { InjuryType, RaceInstance } from '../types';
+import { groomEffect, stableEffects, staffTurnover, staffWeek, type StableEffects } from '../staff/staff';
+import { financeWeek, recordBalance, updateReputation } from '../economy/finance';
+import { updateValues } from '../economy/value';
+import { breedHorse } from '../economy/stallions';
+import { auctionWeek, closeAuctions } from '../market/auction';
+import { marketWeek, transferHorse } from '../market/transfer';
 import { declareRace, runRace } from './raceDay';
-import { addInbox, addLedger, formatMoney, type GameState, sortedById, type WeekSummary, weekIndexOf } from './state';
+import { addInbox, book, formatMoney, type GameState, sortedById, touch, type WeekSummary, weekIndexOf } from './state';
 
 /**
  * Wochenschleife:
- *  beginWeek: Kalender sicherstellen, KI-Nennungen zum Nennschluss, Startlisten der Rennwoche, KI-Training
- *  advanceWeek: Rennen laufen, Training, Kosten, nächste Woche (mit Alterung zum 1. Januar)
+ *  beginWeek: Kalender, KI-Nennungen zum Nennschluss, Startlisten, KI-Training, Auktionskataloge
+ *  advanceWeek: Rennen, Training und Gesundheit, Personal, Finanzen, Markt, nächste Woche
  */
 
 export function ensureCalendars(g: GameState): void {
@@ -38,6 +43,7 @@ export function ensureCalendars(g: GameState): void {
         status: weekIndex < g.weekIndex ? 'void' : 'open',
         resultRunIds: [],
         winningTimeS: null,
+        claims: [],
       };
       g.races[race.id] = race;
     }
@@ -57,6 +63,7 @@ export function beginWeek(g: GameState): void {
     if (race.status === 'open') declareRace(g, race, jockeyDay);
   }
   aiSetTraining(g);
+  auctionWeek(g);
   // Hinweise für den Spieler: eigene Starter dieser Woche
   const mine = racesOfWeek(g, g.weekIndex).filter((r) => r.status === 'closed' && r.runners?.some((x) => x.stableId === g.playerStableId));
   if (mine.length) {
@@ -71,8 +78,17 @@ export function beginWeek(g: GameState): void {
   }
 }
 
+/** Tierarztkosten je Verletzung (£), gesenkt durch eigenen Tierarzt und Klinik. */
+const VET_COST: Record<InjuryType, number> = { cough: 300, sore_shins: 800, hoof: 600, muscle: 900, tendon: 4000 };
+
+export function vetCost(type: InjuryType, eff: StableEffects, clinic: boolean): number {
+  const own = eff.vet === null ? 1 : 0.75 - 0.3 * eff.vet;
+  return Math.round(VET_COST[type] * own * (clinic ? 0.8 : 1));
+}
+
 export function advanceWeek(g: GameState, now: () => number = () => 0): WeekSummary {
   const t0 = now();
+  const balanceBefore = g.stables[g.playerStableId]!.balance;
   const races = racesOfWeek(g, g.weekIndex).filter((r) => r.status === 'closed');
   const raced = new Map<string, number>();
   let runners = 0;
@@ -88,20 +104,43 @@ export function advanceWeek(g: GameState, now: () => number = () => 0): WeekSumm
   }
   // Training und Gesundheit
   const tr = new Rng(g.seed).fork('training', g.weekIndex);
+  const effects = new Map<string, StableEffects>();
+  const effOf = (stableId: string) => {
+    let e = effects.get(stableId);
+    if (!e) {
+      e = stableEffects(g, stableId);
+      effects.set(stableId, e);
+    }
+    return e;
+  };
   let injuries = 0;
   for (const h of Object.values(g.horses)) {
     if (h.status !== 'active') continue;
-    const trainer = g.trainers[g.stables[h.stableId]!.trainerId];
+    const st = g.stables[h.stableId]!;
+    const eff = effOf(h.stableId);
+    const groom = groomEffect(g, h, eff);
     const out = weeklyTraining(h, tr.fork(h.id), {
       season: g.season,
       week: g.week,
       weekIndex: g.weekIndex,
-      trainerSkill: trainer?.skill ?? 0.5,
+      trainerSkill: eff.trainerSkill,
       racedDistanceM: raced.get(h.id) ?? null,
+      trainingFactor: eff.trainingFactor,
+      riskFactor: eff.riskFactor,
+      healFactor: eff.healFactor,
+      freshBonus: groom.fresh,
+      temperamentBonus: groom.temperament,
+      hill: eff.hill,
+      pool: eff.pool,
+      specialty: eff.specialty,
     });
     if (out.injury) {
       injuries++;
-      if (h.stableId === g.playerStableId) {
+      if (st.kind !== 'market') {
+        const cost = vetCost(out.injury.type, eff, st.facilities.clinic);
+        book(g, st.id, { amount: -cost, kind: 'vet', text: `Tierarzt: ${h.name} (${INJURY_LABEL[out.injury.type]})`, horseId: h.id });
+      }
+      if (st.kind === 'player') {
         addInbox(g, {
           kind: 'injury',
           title: `Verletzung: ${h.name}`,
@@ -111,11 +150,18 @@ export function advanceWeek(g: GameState, now: () => number = () => 0): WeekSumm
       }
     }
   }
-  // Kosten des Spielerstalls
-  const own = Object.values(g.horses).filter((h) => h.stableId === g.playerStableId && h.status === 'active');
-  if (own.length) {
-    addLedger(g, { amount: -own.length * g.config.trainingFeePerWeek, kind: 'training', text: `Trainingskosten (${own.length} Pferde)` });
-  }
+
+  // Personal, Finanzen, Markt
+  const staff = staffWeek(g);
+  const fin = financeWeek(g, staff.salaries, (horseId, to, price) => transferHorse(g, horseId, to, price, 'forced_sale'));
+  closeAuctions(g);
+  marketWeek(g);
+  updateValues(g);
+  updateReputation(g);
+  recordBalance(g);
+
+  const events: string[] = [];
+  if (fin.forcedSale) events.push(`Zwangsverkauf: ${g.horses[fin.forcedSale]!.name}`);
   const summary: WeekSummary = {
     season: g.season,
     week: g.week,
@@ -124,6 +170,8 @@ export function advanceWeek(g: GameState, now: () => number = () => 0): WeekSumm
     playerRuns,
     injuries,
     durationMs: 0,
+    balanceDelta: g.stables[g.playerStableId]!.balance - balanceBefore,
+    events,
   };
 
   // Nächste Woche
@@ -142,7 +190,7 @@ export function advanceWeek(g: GameState, now: () => number = () => 0): WeekSumm
   return summary;
 }
 
-/** Jahreswechsel: Alterung (implizit über foalYear), Ruhestand, neue Zweijährige. */
+/** Jahreswechsel: Alterung (implizit über foalYear), Ruhestand, neue Zweijährige, Personal. */
 export function seasonTurnover(g: GameState): void {
   const r = new Rng(g.seed).fork('turnover', g.season);
   const names = new NameRegistry(Object.values(g.horses).map((h) => h.name));
@@ -151,49 +199,67 @@ export function seasonTurnover(g: GameState): void {
     if (h.status !== 'active') continue;
     const age = g.season - h.foalYear;
     const level = h.officialRating ?? 0;
+    const st = g.stables[h.stableId]!;
+    if (st.kind === 'market') {
+      // Unverkaufte Ware der Züchter verschwindet vom Markt
+      h.status = 'retired';
+      touch(g, h.id);
+      continue;
+    }
     const retire =
       age >= 8 ||
       (age >= 6 && r.chance(0.5)) ||
       (age >= 5 && level < 50 && r.chance(0.5)) ||
       (age >= 4 && h.sex === 'female' && r.chance(0.3)) ||
       (h.condition.injury?.type === 'tendon' && age >= 5);
-    if (retire && h.stableId !== g.playerStableId) {
+    if (retire && st.kind === 'ai') {
       h.status = 'retired';
+      touch(g, h.id);
       retired++;
     }
-    if (retire && h.stableId === g.playerStableId && age >= 8) {
+    if (retire && st.kind === 'player' && age >= 8) {
       h.status = 'retired';
+      touch(g, h.id);
       addInbox(g, { kind: 'season', title: `${h.name} geht in den Ruhestand`, body: `${h.name} beendet mit ${age} Jahren die Rennkarriere.`, horseId: h.id });
     }
   }
-  // Neue Zweijährige (bis Phase 4 generiert statt gezüchtet)
-  for (const s of Object.values(g.stables)) {
+  // Neue Zweijährige aus eigener Zucht der Besitzer (bis Phase 4 generiert, mit Abstammung)
+  for (const s of sortedById(Object.values(g.stables))) {
+    if (s.kind === 'market') continue;
     const active = Object.values(g.horses).filter((h) => h.stableId === s.id && h.status === 'active').length;
-    const add = s.isPlayer ? 2 : Math.max(0, g.config.horsesPerStable - active);
+    const add = s.kind === 'player' ? Math.max(0, Math.min(2, s.facilities.boxes - active)) : Math.max(0, g.config.horsesPerStable - active);
     const sr = r.fork('crop', s.id);
-    const avg = s.isPlayer ? 57 : 60;
+    const avg = s.kind === 'player' ? 57 : 60;
     for (let i = 0; i < add; i++) {
-      const h = generateHorse(sr, {
-        id: `h${++g.counters.horse}`,
-        name: names.horseName(sr),
-        stableId: s.id,
-        foalYear: g.season - 2,
-        quality: sr.normal(avg, s.isPlayer ? 4 : 7),
-        season: g.season,
-        week: 1,
-        trainedLevel: 0.9,
-      });
+      const h = breedHorse(
+        g,
+        sr,
+        {
+          id: `h${++g.counters.horse}`,
+          name: names.horseName(sr),
+          stableId: s.id,
+          foalYear: g.season - 2,
+          season: g.season,
+          week: 1,
+          trainedLevel: 0.9,
+          damQuality: sr.normal(avg, s.kind === 'player' ? 4 : 7),
+        },
+        names,
+      );
       g.horses[h.id] = h;
+      touch(g, h.id);
     }
   }
+  staffTurnover(g);
   const player = g.stables[g.playerStableId]!;
   const prev = g.season - 1;
   const myRuns = Object.values(g.runs).filter((x) => x.season === prev && x.stableId === g.playerStableId);
   const wins = myRuns.filter((x) => x.position === 1).length;
   const prize = myRuns.reduce((a, x) => a + x.prize, 0);
+  const net = g.ledger.filter((l) => l.season === prev).reduce((a, l) => a + l.amount, 0);
   addInbox(g, {
     kind: 'season',
     title: `Saisonbilanz ${prev}`,
-    body: `${myRuns.length} Starts, ${wins} Siege, Preisgeld ${formatMoney(prize)}. Kontostand ${formatMoney(player.balance)}. ${retired} Pferde der Konkurrenz gingen in den Ruhestand. Zwei neue Zweijährige sind in deinem Stall eingetroffen.`,
+    body: `${myRuns.length} Starts, ${wins} Siege, Preisgeld ${formatMoney(prize)}. Ergebnis der Saison ${formatMoney(net)}, Kontostand ${formatMoney(player.balance)}. ${retired} Pferde der Konkurrenz gingen in den Ruhestand. Neue Zweijährige aus der Zucht deines Besitzers sind eingetroffen (soweit Boxen frei waren).`,
   });
 }

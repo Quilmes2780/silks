@@ -333,8 +333,8 @@ function trainerOpinion(g: GameState, h: Horse): HorseProfileView['trainerOpinio
   const trainer = g.trainers[g.stables[h.stableId]!.trainerId]!;
   const fuzz = (1 - trainer.insight) * 0.5 / Math.sqrt(1 + h.stats.starts * 0.3);
   const opt = h.prefs.distOptM * Math.pow(2, h.estimateNoise.stamina * fuzz * 0.6);
-  const lo = furlongs(opt / Math.pow(2, 0.25 * h.prefs.distRange));
-  const hi = furlongs(opt * Math.pow(2, 0.25 * h.prefs.distRange));
+  const lo = furlongs(opt / Math.pow(2, 0.25 * h.prefs.distRange), true);
+  const hi = furlongs(opt * Math.pow(2, 0.25 * h.prefs.distRange), true);
   const gv = h.prefs.going + h.estimateNoise.kick * fuzz;
   const going = gv < -0.45 ? 'mag festen Boden' : gv > 0.45 ? 'mag weichen Boden' : 'kommt mit jedem Boden zurecht';
   const style = { front: 'läuft gern von vorn', prominent: 'läuft gern vorne mit', midfield: 'läuft gern im Mittelfeld', held_up: 'kommt gern von hinten' }[h.prefs.runStyle];

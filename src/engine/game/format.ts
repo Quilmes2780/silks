@@ -24,8 +24,8 @@ export function weekLabel(season: number, week: number): string {
 }
 
 /** Distanz in britischer Notation (z. B. 1m2f56y). */
-export function furlongs(m: number): string {
-  const yards = Math.round(m / 0.9144);
+export function furlongs(m: number, roundToFurlong = false): string {
+  const yards = roundToFurlong ? Math.round(m / 201.168) * 220 : Math.round(m / 0.9144);
   const miles = Math.floor(yards / 1760);
   let rest = yards - miles * 1760;
   const f = Math.floor(rest / 220);

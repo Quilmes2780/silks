@@ -1,0 +1,15 @@
+{
+  "$schema": "../schema/horses.schema.json",
+  "note": "PLATZHALTER: fiktive Beispielpferde. Echte Pferde bitte selbst eintragen. 'quality' (1–100) und 'distOptM' steuern die Generierung der verborgenen Werte; alternativ kann 'potential' vollständig angegeben werden.",
+  "horses": [
+    { "id": "ph_horse_1", "name": "Example Runner", "sex": "male", "gelded": false, "foalYear": 2023, "colour": "bay", "stableId": "ph_stable_1", "sireName": "Example Sire", "damName": "Example Dam", "quality": 72, "distOptM": 2000, "placeholder": true },
+    { "id": "ph_horse_2", "name": "Sample Sprinter", "sex": "female", "gelded": false, "foalYear": 2022, "colour": "chestnut", "stableId": "ph_stable_2", "sireName": "Example Sire", "damName": "Sample Dam", "quality": 70, "distOptM": 1100, "placeholder": true },
+    {
+      "id": "ph_horse_3", "name": "Template Stayer", "sex": "male", "gelded": true, "foalYear": 2021, "colour": "grey", "stableId": "ph_stable_1", "sireName": null, "damName": null,
+      "potential": { "speed": 62, "acceleration": 58, "stamina": 84, "kick": 66, "fight": 70, "agility": 55, "temperament": 64, "consistency": 72 },
+      "prefs": { "distOptM": 3000, "distRange": 1.1, "going": 0.4, "direction": 0, "runStyle": "prominent" },
+      "maturity": "late",
+      "placeholder": true
+    }
+  ]
+}

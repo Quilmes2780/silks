@@ -139,7 +139,6 @@ export function simulateRace(input: SimInput): SimOutput {
   const course = buildCourse(track, D);
   const n = input.runners.length;
   const marks = sectionalMarks(D);
-  const tight = track.bends === 'tight' ? 1 : 0;
 
   // ---- Vorbereitung je Pferd ----
   const params = input.runners.map((r, i) => {

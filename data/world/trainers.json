@@ -1,0 +1,8 @@
+{
+  "$schema": "../schema/trainers.schema.json",
+  "note": "PLATZHALTER: fiktive Beispiel-Trainer. Echte Trainer bitte selbst eintragen; Werte 0–1.",
+  "trainers": [
+    { "id": "ph_trainer_1", "name": "Beispiel-Trainer A (Platzhalter)", "skill": 0.7, "insight": 0.6, "specialty": "none", "placeholder": true },
+    { "id": "ph_trainer_2", "name": "Beispiel-Trainer B (Platzhalter)", "skill": 0.6, "insight": 0.5, "specialty": "sprint", "placeholder": true }
+  ]
+}

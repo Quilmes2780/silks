@@ -2,6 +2,7 @@ import type { Rng } from '../rng';
 import type { Attributes, Colour, Horse, Markings, Maturity, Preferences, RunStyle, Sex, TrainingPlan } from '../types';
 import { ATTR_KEYS } from '../types';
 import { ageAt, ceilingAttributes, PEAK_AGE } from './maturity';
+import { emptyStats } from '../stats/horseStats';
 
 export interface GenerateHorseOptions {
   id: string;
@@ -143,6 +144,9 @@ export function generateHorse(rng: Rng, o: GenerateHorseOptions): Horse {
     officialRating: null,
     ratingHistory: [],
     lastRunWeekIndex: null,
+    runIds: [],
+    preRecord: { starts: 0, wins: 0, places: 0, earnings: 0 },
+    stats: emptyStats(),
     estimateNoise,
     value: null,
     source: 'generated',

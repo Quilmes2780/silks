@@ -1,0 +1,80 @@
+{
+  "$id": "races.schema.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "required": ["features", "meetings", "generic"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "note": { "type": "string" },
+    "features": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "name", "trackId", "week", "day", "raceClass", "distanceM", "ageMin", "ageMax", "sex", "prize"],
+        "properties": {
+          "id": { "$ref": "common.schema.json#/definitions/id" },
+          "name": { "type": "string" },
+          "trackId": { "$ref": "common.schema.json#/definitions/id" },
+          "week": { "type": "integer", "minimum": 1, "maximum": 52 },
+          "day": { "enum": ["sat", "sun"] },
+          "raceClass": { "$ref": "common.schema.json#/definitions/raceClass" },
+          "distanceM": { "type": "number", "minimum": 900, "maximum": 4500 },
+          "ageMin": { "type": "integer", "minimum": 2, "maximum": 10 },
+          "ageMax": { "type": ["integer", "null"], "minimum": 2, "maximum": 15 },
+          "sex": { "$ref": "common.schema.json#/definitions/sexRestriction" },
+          "orMin": { "type": "number" },
+          "orMax": { "type": "number" },
+          "prize": { "type": "number", "minimum": 0 },
+          "maxRunners": { "type": "integer", "minimum": 2, "maximum": 30 }
+        }
+      }
+    },
+    "meetings": {
+      "type": "object",
+      "required": ["turfSeason", "turfSaturday", "turfSunday", "awSaturdayInSeason", "awSaturdayWinter", "awSundayWinter", "racesPerMeeting", "majorTurfRotation", "minorTurfRotation", "awRotation"],
+      "properties": {
+        "turfSeason": {
+          "type": "object",
+          "required": ["fromWeek", "toWeek"],
+          "properties": { "fromWeek": { "type": "integer" }, "toWeek": { "type": "integer" } }
+        },
+        "turfSaturday": { "type": "integer", "minimum": 0 },
+        "turfSunday": { "type": "integer", "minimum": 0 },
+        "awSaturdayInSeason": { "type": "integer", "minimum": 0 },
+        "awSaturdayWinter": { "type": "integer", "minimum": 0 },
+        "awSundayWinter": { "type": "integer", "minimum": 0 },
+        "racesPerMeeting": { "type": "integer", "minimum": 1, "maximum": 10 },
+        "majorTurfRotation": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+        "minorTurfRotation": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+        "awRotation": { "type": "array", "items": { "type": "string" }, "minItems": 1 }
+      }
+    },
+    "generic": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["key", "name", "raceClass", "bhaClass", "ageMin", "ageMax", "weight", "distances", "prize"],
+        "properties": {
+          "key": { "type": "string" },
+          "name": { "type": "string" },
+          "raceClass": { "$ref": "common.schema.json#/definitions/raceClass" },
+          "bhaClass": { "type": "integer", "minimum": 1, "maximum": 7 },
+          "ageMin": { "type": "integer", "minimum": 2 },
+          "ageMax": { "type": ["integer", "null"] },
+          "orMin": { "type": "number" },
+          "orMax": { "type": "number" },
+          "maidenOnly": { "type": "boolean" },
+          "maxWins": { "type": "integer", "minimum": 0 },
+          "fromWeek": { "type": "integer", "minimum": 1, "maximum": 52 },
+          "toWeek": { "type": "integer", "minimum": 1, "maximum": 52 },
+          "weight": { "type": "number", "minimum": 0 },
+          "distances": { "type": "array", "items": { "type": "number" }, "minItems": 1 },
+          "prize": { "type": "number", "minimum": 0 }
+        }
+      }
+    }
+  }
+}

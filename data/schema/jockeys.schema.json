@@ -1,0 +1,28 @@
+{
+  "$id": "jockeys.schema.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "required": ["jockeys"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "note": { "type": "string" },
+    "jockeys": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "name", "tactics", "pace", "finishing"],
+        "properties": {
+          "id": { "$ref": "common.schema.json#/definitions/id" },
+          "name": { "type": "string" },
+          "tactics": { "$ref": "common.schema.json#/definitions/unit" },
+          "pace": { "$ref": "common.schema.json#/definitions/unit" },
+          "finishing": { "$ref": "common.schema.json#/definitions/unit" },
+          "weightLb": { "type": "number", "minimum": 100, "maximum": 140 },
+          "fee": { "type": "number", "minimum": 0 },
+          "placeholder": { "type": "boolean" }
+        }
+      }
+    }
+  }
+}

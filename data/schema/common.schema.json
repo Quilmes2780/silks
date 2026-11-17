@@ -1,0 +1,14 @@
+{
+  "$id": "common.schema.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "definitions": {
+    "id": { "type": "string", "pattern": "^[a-z0-9_]+$" },
+    "unit": { "type": "number", "minimum": 0, "maximum": 1 },
+    "attr": { "type": "number", "minimum": 1, "maximum": 100 },
+    "colour": { "enum": ["bay", "chestnut", "black", "grey", "brown"] },
+    "hex": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" },
+    "raceClass": { "enum": ["G1", "G2", "G3", "Listed", "Heritage", "Handicap", "Conditions", "Novice", "Maiden"] },
+    "sexRestriction": { "enum": ["open", "fillies", "colts_fillies", "colts_geldings"] },
+    "runStyle": { "enum": ["front", "prominent", "midfield", "held_up"] }
+  }
+}

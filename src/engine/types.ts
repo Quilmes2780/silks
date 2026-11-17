@@ -3,6 +3,7 @@
  * Felder für spätere Phasen (Zucht, Genetik, Personal, Finanzen) sind bereits angelegt,
  * damit diese ohne Umbau dazukommen.
  */
+import type { SimInput } from './race/sim';
 
 export type AttrKey =
   | 'speed' // Grundschnelligkeit
@@ -133,12 +134,66 @@ export interface Horse {
   officialRating: number | null;
   ratingHistory: RatingEntry[];
   lastRunWeekIndex: number | null;
+  /** IDs aller Starts, chronologisch */
+  runIds: string[];
+  /** Bilanz vor Spielbeginn (aus der Weltdatei oder generiert) */
+  preRecord: { starts: number; wins: number; places: number; earnings: number };
+  /** Beim Rennabschluss berechnete Kennzahlen */
+  stats: HorseStats;
   /** Feste z-Werte für die Schätzung (der Spieler sieht nie die echten Werte). */
   estimateNoise: Attributes;
   /** Marktwert (Phase 3) */
   value: number | null;
   source: 'world' | 'generated';
   placeholder: boolean;
+}
+
+/** Ein Kennzahlwert mit Verweis auf den Start, aus dem er stammt. */
+export interface FigureRef {
+  value: number;
+  runId: string;
+}
+
+/** Aggregat einer Bedingung (Distanz, Boden, Bahn …) mit Verweis auf alle Starts. */
+export interface ConditionCell {
+  n: number;
+  meanFigure: number;
+  bestFigure: number;
+  wins: number;
+  runIds: string[];
+}
+
+export interface StrikeRate {
+  starts: number;
+  wins: number;
+  places: number;
+}
+
+export interface HorseStats {
+  starts: number;
+  wins: number;
+  seconds: number;
+  thirds: number;
+  earnings: number;
+  lastFigures: FigureRef[];
+  bestFigure: FigureRef | null;
+  /** Standardabweichung der letzten 10 Speed Figures */
+  figureSd: number | null;
+  /** 0–100, hoch = konstant */
+  consistencyIndex: number | null;
+  /** Steigung der Formkurve (lb pro Start) */
+  formTrend: number | null;
+  avgFinishingSpeed: number | null;
+  strikeByClass: Record<string, StrikeRate>;
+  byDistance: Record<string, ConditionCell>;
+  byGoing: Record<string, ConditionCell>;
+  bySurface: Record<string, ConditionCell>;
+  byTrack: Record<string, ConditionCell>;
+  byStall: Record<string, ConditionCell>;
+  byJockey: Record<string, ConditionCell>;
+  byLayoff: Record<string, ConditionCell>;
+  /** Distanz × Boden, Schlüssel "distanz|boden" */
+  heatmap: Record<string, ConditionCell>;
 }
 
 export interface Track {
@@ -245,6 +300,8 @@ export interface RaceInstance {
   status: 'open' | 'closed' | 'run' | 'void';
   resultRunIds: string[];
   winningTimeS: number | null;
+  /** Eingefrorene Simulationseingaben – ein Replay ist eine deterministische Neusimulation */
+  replayInput?: Omit<SimInput, 'record'>;
 }
 
 export type RaceEventType =

@@ -1,0 +1,37 @@
+{
+  "$id": "stables.schema.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "required": ["stables"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "note": { "type": "string" },
+    "stables": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "name", "trainerId", "silks"],
+        "properties": {
+          "id": { "$ref": "common.schema.json#/definitions/id" },
+          "name": { "type": "string" },
+          "trainerId": { "$ref": "common.schema.json#/definitions/id" },
+          "strategy": { "enum": ["balanced", "sprint", "staying"] },
+          "silks": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["pattern", "body", "pattern2", "sleeves", "cap"],
+            "properties": {
+              "pattern": { "enum": ["plain", "hoops", "stripes", "sash", "chevrons", "quartered", "diamond", "cross_belts", "spots", "halved"] },
+              "body": { "$ref": "common.schema.json#/definitions/hex" },
+              "pattern2": { "$ref": "common.schema.json#/definitions/hex" },
+              "sleeves": { "$ref": "common.schema.json#/definitions/hex" },
+              "cap": { "$ref": "common.schema.json#/definitions/hex" }
+            }
+          },
+          "placeholder": { "type": "boolean" }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "$schema": "../schema/stables.schema.json",
+  "note": "PLATZHALTER: Beispielstall zur Veranschaulichung des Formats. Echte Rennställe bitte hier eintragen (placeholder: false). Fehlende KI-Ställe werden beim Spielstart generiert.",
+  "stables": [
+    {
+      "id": "ph_stable_1",
+      "name": "Beispielstall Eins (Platzhalter)",
+      "trainerId": "ph_trainer_1",
+      "strategy": "balanced",
+      "silks": { "pattern": "hoops", "body": "#1f3a93", "pattern2": "#f2c94c", "sleeves": "#1f3a93", "cap": "#f2c94c" },
+      "placeholder": true
+    },
+    {
+      "id": "ph_stable_2",
+      "name": "Beispielstall Zwei (Platzhalter)",
+      "trainerId": "ph_trainer_2",
+      "strategy": "sprint",
+      "silks": { "pattern": "sash", "body": "#7b1e1e", "pattern2": "#ffffff", "sleeves": "#ffffff", "cap": "#7b1e1e" },
+      "placeholder": true
+    }
+  ]
+}

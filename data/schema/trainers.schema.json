@@ -1,0 +1,26 @@
+{
+  "$id": "trainers.schema.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "required": ["trainers"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "note": { "type": "string" },
+    "trainers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "name", "skill", "insight"],
+        "properties": {
+          "id": { "$ref": "common.schema.json#/definitions/id" },
+          "name": { "type": "string" },
+          "skill": { "$ref": "common.schema.json#/definitions/unit" },
+          "insight": { "$ref": "common.schema.json#/definitions/unit" },
+          "specialty": { "enum": ["none", "sprint", "staying"] },
+          "placeholder": { "type": "boolean" }
+        }
+      }
+    }
+  }
+}

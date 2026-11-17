@@ -1,0 +1,60 @@
+{
+  "$id": "horses.schema.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "required": ["horses"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "note": { "type": "string" },
+    "horses": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "name", "sex", "foalYear", "stableId"],
+        "properties": {
+          "id": { "$ref": "common.schema.json#/definitions/id" },
+          "name": { "type": "string", "minLength": 2, "maxLength": 18 },
+          "sex": { "enum": ["male", "female"] },
+          "gelded": { "type": "boolean" },
+          "foalYear": { "type": "integer", "minimum": 1990, "maximum": 2100 },
+          "colour": { "$ref": "common.schema.json#/definitions/colour" },
+          "stableId": { "$ref": "common.schema.json#/definitions/id" },
+          "sireName": { "type": ["string", "null"] },
+          "damName": { "type": ["string", "null"] },
+          "quality": { "$ref": "common.schema.json#/definitions/attr" },
+          "distOptM": { "type": "number", "minimum": 900, "maximum": 4500 },
+          "potential": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["speed", "acceleration", "stamina", "kick", "fight", "agility", "temperament", "consistency"],
+            "properties": {
+              "speed": { "$ref": "common.schema.json#/definitions/attr" },
+              "acceleration": { "$ref": "common.schema.json#/definitions/attr" },
+              "stamina": { "$ref": "common.schema.json#/definitions/attr" },
+              "kick": { "$ref": "common.schema.json#/definitions/attr" },
+              "fight": { "$ref": "common.schema.json#/definitions/attr" },
+              "agility": { "$ref": "common.schema.json#/definitions/attr" },
+              "temperament": { "$ref": "common.schema.json#/definitions/attr" },
+              "consistency": { "$ref": "common.schema.json#/definitions/attr" }
+            }
+          },
+          "prefs": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["distOptM", "distRange", "going", "direction", "runStyle"],
+            "properties": {
+              "distOptM": { "type": "number", "minimum": 900, "maximum": 4500 },
+              "distRange": { "type": "number", "minimum": 0.3, "maximum": 3 },
+              "going": { "type": "number", "minimum": -1, "maximum": 1 },
+              "direction": { "type": "number", "minimum": -1, "maximum": 1 },
+              "runStyle": { "$ref": "common.schema.json#/definitions/runStyle" }
+            }
+          },
+          "maturity": { "enum": ["early", "normal", "late"] },
+          "placeholder": { "type": "boolean" }
+        }
+      }
+    }
+  }
+}

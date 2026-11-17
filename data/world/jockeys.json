@@ -1,0 +1,8 @@
+{
+  "$schema": "../schema/jockeys.schema.json",
+  "note": "PLATZHALTER: fiktive Beispiel-Jockeys. Echte Jockeys bitte selbst eintragen; Fähigkeiten 0–1, Gewicht in lb, Reitgebühr in £.",
+  "jockeys": [
+    { "id": "ph_jockey_1", "name": "Beispiel-Jockey A (Platzhalter)", "tactics": 0.8, "pace": 0.75, "finishing": 0.8, "weightLb": 119, "fee": 180, "placeholder": true },
+    { "id": "ph_jockey_2", "name": "Beispiel-Jockey B (Platzhalter)", "tactics": 0.6, "pace": 0.65, "finishing": 0.6, "weightLb": 116, "fee": 150, "placeholder": true }
+  ]
+}

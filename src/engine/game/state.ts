@@ -1,5 +1,6 @@
 import type {
   Auction,
+  BreedingState,
   Horse,
   InboxMessage,
   LedgerEntry,
@@ -14,6 +15,7 @@ import type {
   TransferOffer,
 } from '../types';
 import type { WorldData } from '../world/load';
+import type { GeneticsState } from '../breeding/genetics';
 
 export interface GameConfig {
   aiStables: number;
@@ -75,7 +77,7 @@ export interface FinanceState {
 }
 
 export interface GameState {
-  version: 2;
+  version: 3;
   id: string;
   name: string;
   createdAt: string;
@@ -98,6 +100,8 @@ export interface GameState {
   auctions: Record<string, Auction>;
   offers: TransferOffer[];
   finance: FinanceState;
+  genetics: GeneticsState;
+  breeding: BreedingState;
   inbox: InboxMessage[];
   ledger: LedgerEntry[];
   counters: { horse: number; run: number; msg: number; staff: number; offer: number; lot: number };
@@ -161,6 +165,49 @@ export function horseAccount(g: GameState, horseId: string): HorseAccount {
 
 export function touch(g: GameState, horseId: string): void {
   if (!g.touchedHorses.includes(horseId)) g.touchedHorses.push(horseId);
+  invalidateHorseIndex(g);
+}
+
+/**
+ * Index der Pferde je Stall und Status (nicht gespeichert). Er wird bei jeder Besitzer- oder
+ * Statusänderung über touch() verworfen und bei neuen Pferden (Zähler) neu aufgebaut.
+ */
+interface HorseIndex {
+  rev: number;
+  count: number;
+  byStable: Map<string, Map<Horse['status'], Horse[]>>;
+}
+const horseIndex = new WeakMap<GameState, HorseIndex>();
+const indexRev = new WeakMap<GameState, number>();
+
+export function invalidateHorseIndex(g: GameState): void {
+  indexRev.set(g, (indexRev.get(g) ?? 0) + 1);
+}
+
+function horseIndexOf(g: GameState): HorseIndex {
+  const rev = indexRev.get(g) ?? 0;
+  const count = g.counters.horse;
+  const cur = horseIndex.get(g);
+  if (cur && cur.rev === rev && cur.count === count) return cur;
+  const byStable = new Map<string, Map<Horse['status'], Horse[]>>();
+  for (const h of sortedById(Object.values(g.horses))) {
+    let m = byStable.get(h.stableId);
+    if (!m) byStable.set(h.stableId, (m = new Map()));
+    let arr = m.get(h.status);
+    if (!arr) m.set(h.status, (arr = []));
+    arr.push(h);
+  }
+  const idx = { rev, count, byStable };
+  horseIndex.set(g, idx);
+  return idx;
+}
+
+/** Pferde eines Stalls mit bestimmtem Status, nach ID sortiert (Kopie). */
+export function horsesWithStatus(g: GameState, stableId: string, ...status: Horse['status'][]): Horse[] {
+  const m = horseIndexOf(g).byStable.get(stableId);
+  if (!m) return [];
+  if (status.length === 1) return [...(m.get(status[0]!) ?? [])];
+  return sortedById(status.flatMap((st) => m.get(st) ?? []));
 }
 
 export function touchRace(g: GameState, raceId: string): void {
@@ -168,7 +215,7 @@ export function touchRace(g: GameState, raceId: string): void {
 }
 
 export function horsesOfStable(g: GameState, stableId: string): Horse[] {
-  return sortedById(Object.values(g.horses).filter((h) => h.stableId === stableId && h.status === 'active'));
+  return horsesWithStatus(g, stableId, 'active');
 }
 
 export function staffOfStable(g: GameState, stableId: string, role?: Staff['role']): Staff[] {

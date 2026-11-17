@@ -21,6 +21,7 @@ export const ROLE_LABEL: Record<StaffRole, string> = {
   farrier: 'Hufschmied',
   agent: 'Bloodstock-Agent',
   analyst: 'Datenanalyst',
+  stud_manager: 'Gestütsleiter',
 };
 
 export const ROLE_EFFECT: Record<StaffRole, string> = {
@@ -33,6 +34,7 @@ export const ROLE_EFFECT: Record<StaffRole, string> = {
   farrier: 'Verletzungsvorbeugung, besonders an den Hufen',
   agent: 'Genauigkeit der Auktionsgutachten',
   analyst: 'Speed Figures und Sectional Times; Können bestimmt die Genauigkeit',
+  stud_manager: 'Trächtigkeitsrate, Fohlenverluste, Exterieur der Fohlen, Genauigkeit der Paarungsprognose',
 };
 
 /** Grundgehalt je Woche in £ für Personal mittlerer Qualität. */
@@ -46,6 +48,7 @@ export const BASE_SALARY: Record<StaffRole, number> = {
   farrier: 260,
   agent: 340,
   analyst: 280,
+  stud_manager: 360,
 };
 
 export const GROOM_CAPACITY = 4;
@@ -181,6 +184,8 @@ export interface StableEffects {
   farrier: number | null;
   agent: number | null;
   analyst: number | null;
+  /** Gestütsleiter (KI: Personalqualität) */
+  studManager: number | null;
   hill: boolean;
   pool: boolean;
   /** Zahl der Pferde und Kapazität für Hinweise */
@@ -220,6 +225,7 @@ export function stableEffects(g: GameState, stableId: string): StableEffects {
       farrier: q,
       agent: q,
       analyst: q,
+      studManager: q,
       trainerCapacity: 999,
       riderCapacity: 999,
     };
@@ -248,6 +254,7 @@ export function stableEffects(g: GameState, stableId: string): StableEffects {
     farrier,
     agent: best(of('agent')),
     analyst: best(of('analyst')),
+    studManager: best(of('stud_manager')),
     trainerCapacity,
     riderCapacity,
   };
@@ -338,6 +345,7 @@ const POOL_TARGET: Record<StaffRole, number> = {
   farrier: 4,
   agent: 4,
   analyst: 5,
+  stud_manager: 4,
 };
 
 export function refreshStaffPool(g: GameState, r: Rng, initial = false): void {

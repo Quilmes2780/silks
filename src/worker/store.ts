@@ -147,7 +147,8 @@ export function parseImport(json: string): GameState {
   const p = parsed as { format?: string; version?: number; game?: GameState };
   if (p.format !== EXPORT_FORMAT || !p.game) throw new Error('Die Datei ist kein Spielstand von Silks & Stamina.');
   const v = p.game.version as number;
-  if ((p.version !== 1 && p.version !== SAVE_VERSION) || (v !== 1 && v !== SAVE_VERSION)) throw new Error(`Spielstand-Version ${p.version} wird nicht unterstützt.`);
+  const known = (x: unknown) => x === 1 || x === 2 || x === SAVE_VERSION;
+  if (!known(p.version) || !known(v)) throw new Error(`Spielstand-Version ${p.version} wird nicht unterstützt.`);
   const raw = p.game as unknown as Record<string, unknown>;
   const required = v === 1 ? ['horses', 'runs', 'races', 'templates', 'stables', 'jockeys', 'trainers', 'tracks'] : ['horses', 'runs', 'races', 'templates', 'stables', 'staff', 'tracks', 'finance'];
   for (const key of required) {

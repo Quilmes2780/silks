@@ -93,11 +93,36 @@ export type TrainingBlock = 'rest' | 'canter' | 'gallop' | 'hill' | 'sprints' | 
 /** Wochenplan Montag bis Samstag (Sonntag ist Ruhetag). */
 export type TrainingPlan = [TrainingBlock, TrainingBlock, TrainingBlock, TrainingBlock, TrainingBlock, TrainingBlock];
 
-/** Platzhalter für Phase 4 (Zucht und Genetik). */
+export type GeneKey =
+  | 'class'
+  | 'dist'
+  | 'going'
+  | 'speed'
+  | 'acceleration'
+  | 'stamina'
+  | 'kick'
+  | 'fight'
+  | 'agility'
+  | 'temperament'
+  | 'consistency';
+
+export const GENE_KEYS: readonly GeneKey[] = ['class', 'dist', 'going', 'speed', 'acceleration', 'stamina', 'kick', 'fight', 'agility', 'temperament', 'consistency'];
+
+/** Erbanlagen (Phase 4): je Merkmal 2·LOCI additive Allele, Fellfarbe nach echten Erbgängen. */
 export interface Genotype {
-  loci: Partial<Record<AttrKey, Array<[number, number]>>>;
-  colour?: { extension: string; agouti: string; grey: string };
+  /** Allele je Merkmal, paarweise [Vater, Mutter] je Locus; bei Pferden im Ruhestand leer */
+  loci: Partial<Record<GeneKey, number[]>>;
+  colour: { extension: ['E' | 'e', 'E' | 'e']; agouti: ['A' | 'At' | 'a', 'A' | 'At' | 'a']; grey: ['G' | 'g', 'G' | 'g'] };
+  /** Neigung zu weißen Abzeichen */
+  white: number;
+  /** väterliche Hengstlinie */
+  line: string;
+  /** Inzuchtkoeffizient (Wright) */
+  coi: number;
 }
+
+/** active = im Training; young = Fohlen/Jährling im Gestüt; broodmare/stud = in der Zucht */
+export type HorseStatus = 'active' | 'retired' | 'young' | 'broodmare' | 'stud';
 
 export interface RatingEntry {
   season: number;
@@ -123,7 +148,7 @@ export interface Horse {
   breederId: string | null;
   // Besitz
   stableId: string;
-  status: 'active' | 'retired';
+  status: HorseStatus;
   // Verborgene Werte
   potential: Attributes;
   current: Attributes;
@@ -155,8 +180,22 @@ export interface Horse {
   purchase: { price: number; weekIndex: number; fromStableId: string | null; via: PurchaseVia } | null;
   /** Zum Verkauf angeboten */
   forSale: { askingPrice: number; sinceWeekIndex: number } | null;
+  /** Teilhaber neben dem Besitzer (Anteile 0–1); der Besitzer hält den Rest und entscheidet */
+  partners?: Array<{ stableId: string; share: number }>;
+  /** Einstellpferd eines fremden Besitzers (nur im Spielerstall) */
+  boarding?: Boarding | null;
   source: 'world' | 'generated';
   placeholder: boolean;
+}
+
+export interface Boarding {
+  ownerName: string;
+  weeklyFee: number;
+  sinceWeekIndex: number;
+  /** Zufriedenheit des Besitzers 0–100 */
+  satisfaction: number;
+  /** Erwartetes Niveau (öffentlich: Rating-Skala) */
+  expectation: number;
 }
 
 export interface ValuePoint {
@@ -440,6 +479,8 @@ export interface Facilities {
   hill: boolean;
   /** Tierklinik: schnellere Heilung, Früherkennung */
   clinic: boolean;
+  /** Gestüt mit Weiden: Ausbaustufe (je Stufe Plätze für Stuten und Nachwuchs) */
+  stud?: number;
 }
 
 export interface Stable {
@@ -471,7 +512,8 @@ export type StaffRole =
   | 'vet'
   | 'farrier'
   | 'agent'
-  | 'analyst';
+  | 'analyst'
+  | 'stud_manager';
 
 export const STAFF_ROLES: readonly StaffRole[] = [
   'head_trainer',
@@ -483,6 +525,7 @@ export const STAFF_ROLES: readonly StaffRole[] = [
   'farrier',
   'agent',
   'analyst',
+  'stud_manager',
 ];
 
 export interface Contract {
@@ -540,21 +583,49 @@ export interface Staff {
   placeholder: boolean;
 }
 
-/** Deckhengst des generierten Registers (Abstammung für Jährlinge bis Phase 4). */
+/** Deckhengst (Phase 4: ein Pferd im Gestüt; id = Pferde-ID). */
 export interface Stallion {
   id: string;
   name: string;
   foalYear: number;
-  /** Decktaxe in £ (öffentlich) */
+  /** Decktaxe in £ (öffentlich), richtet sich nach Rennleistung und Erfolg der Nachkommen */
   fee: number;
-  /** verborgene Vererbungsqualität (Attributskala) */
-  quality: number;
-  distOptM: number;
-  going: number;
+  /** Besitzer (Stall-ID; 'breeders' = Gestüte der Züchter) */
+  ownerId: string;
+  line: string;
+  /** höchstens so viele Stuten je Decksaison */
+  bookLimit: number;
+  /** Bedeckungen der laufenden Decksaison */
+  covers: number;
+  /** erste Decksaison */
+  since: number;
+  /** bestes Official Rating der Rennkarriere (öffentlich) */
+  raceRating: number | null;
   active: boolean;
 }
 
-export type AuctionKind = 'breeze_up' | 'yearling' | 'horses_in_training';
+/** Trächtigkeit einer Stute; Genotyp des Fohlens steht seit der Befruchtung fest. */
+export interface Pregnancy {
+  mareId: string;
+  sireId: string;
+  ownerId: string;
+  coverSeason: number;
+  coverWeek: number;
+  /** Abfohlwoche in der Folgesaison */
+  dueWeek: number;
+  genotype: Genotype;
+  sex: Sex;
+}
+
+export interface BreedingState {
+  /** Deckplan: Stute → Hengst */
+  plans: Record<string, string>;
+  pregnancies: Record<string, Pregnancy>;
+  /** Stuten, die in dieser Decksaison nicht aufgenommen haben */
+  barren: string[];
+}
+
+export type AuctionKind = 'breeze_up' | 'yearling' | 'horses_in_training' | 'broodmare';
 
 export interface Lot {
   id: string;
@@ -605,7 +676,7 @@ export interface InboxMessage {
   id: string;
   season: number;
   week: number;
-  kind: 'injury' | 'result' | 'deadline' | 'trainer' | 'season' | 'info' | 'staff' | 'market' | 'finance';
+  kind: 'injury' | 'result' | 'deadline' | 'trainer' | 'season' | 'info' | 'staff' | 'market' | 'finance' | 'breeding';
   title: string;
   body: string;
   horseId?: string;
@@ -626,6 +697,11 @@ export type LedgerKind =
   | 'vet'
   | 'facility'
   | 'interest'
+  | 'stud_fee'
+  | 'stud_income'
+  | 'stud_upkeep'
+  | 'boarding_fee'
+  | 'partner'
   | 'other';
 
 export interface LedgerEntry {

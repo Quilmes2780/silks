@@ -1,5 +1,5 @@
 import { deriveSeed, Rng } from '../rng';
-import { aiMakeEntries, aiSetTraining } from '../ai/ai';
+import { aiLevel, aiMakeEntries, aiSetTraining } from '../ai/ai';
 import { weeklyTraining, INJURY_LABEL } from '../horse/training';
 import { buildSeasonCalendar } from '../season/calendar';
 import { NameRegistry } from '../world/names';
@@ -7,11 +7,13 @@ import type { InjuryType, RaceInstance } from '../types';
 import { groomEffect, stableEffects, staffTurnover, staffWeek, type StableEffects } from '../staff/staff';
 import { financeWeek, recordBalance, updateReputation } from '../economy/finance';
 import { updateValues } from '../economy/value';
-import { breedHorse } from '../economy/stallions';
+import { activeStallions, importHorse } from '../breeding/stud';
+import { breedingTurnover, breedingWeek, cullOldMares, mareCounts, retireRacehorse, studWorthy } from '../breeding/cycle';
+import { dropLoci } from '../breeding/genetics';
 import { auctionWeek, closeAuctions } from '../market/auction';
 import { marketWeek, transferHorse } from '../market/transfer';
 import { declareRace, runRace } from './raceDay';
-import { addInbox, book, formatMoney, type GameState, sortedById, touch, type WeekSummary, usedHorseNames, weekIndexOf } from './state';
+import { addInbox, book, formatMoney, type GameState, horsesOfStable, sortedById, touch, type WeekSummary, usedHorseNames, weekIndexOf } from './state';
 
 /**
  * Wochenschleife:
@@ -151,6 +153,9 @@ export function advanceWeek(g: GameState, now: () => number = () => 0): WeekSumm
     }
   }
 
+  // Zucht: Decksaison und Geburten
+  breedingWeek(g);
+
   // Personal, Finanzen, Markt
   const staff = staffWeek(g);
   const fin = financeWeek(g, staff.salaries, (horseId, to, price) => transferHorse(g, horseId, to, price, 'forced_sale'));
@@ -190,11 +195,15 @@ export function advanceWeek(g: GameState, now: () => number = () => 0): WeekSumm
   return summary;
 }
 
-/** Jahreswechsel: Alterung (implizit über foalYear), Ruhestand, neue Zweijährige, Personal. */
+/** Jahreswechsel: Alterung (implizit über foalYear), Ruhestand, Zucht, neue Zweijährige, Personal. */
 export function seasonTurnover(g: GameState): void {
   const r = new Rng(g.seed).fork('turnover', g.season);
   const names = new NameRegistry(usedHorseNames(g));
+  cullOldMares(g, r.fork('cull'));
+  const mares = mareCounts(g);
   let retired = 0;
+  let newStuds = 0;
+  const studRoom = () => newStuds < 8 && activeStallions(g).length < 70;
   for (const h of sortedById(Object.values(g.horses))) {
     if (h.status !== 'active') continue;
     const age = g.season - h.foalYear;
@@ -203,51 +212,65 @@ export function seasonTurnover(g: GameState): void {
     if (st.kind === 'market') {
       // Unverkaufte Ware der Züchter verschwindet vom Markt
       h.status = 'retired';
+      dropLoci(h);
       touch(g, h.id);
       continue;
     }
+    if (h.boarding) continue;
     const retire =
       age >= 8 ||
       (age >= 6 && r.chance(0.5)) ||
       (age >= 5 && level < 50 && r.chance(0.5)) ||
       (age >= 4 && h.sex === 'female' && r.chance(0.3)) ||
-      (h.condition.injury?.type === 'tendon' && age >= 5);
+      (h.condition.injury?.type === 'tendon' && age >= 5) ||
+      // Spitzenhengste der KI gehen früh ins Gestüt
+      (st.kind === 'ai' && age >= 4 && studWorthy(h) && level >= 108 && studRoom());
     if (retire && st.kind === 'ai') {
-      h.status = 'retired';
-      touch(g, h.id);
+      const out = retireRacehorse(g, h, r.fork('retire', h.id), mares, studRoom());
+      if (out === 'stud') newStuds++;
       retired++;
     }
     if (retire && st.kind === 'player' && age >= 8) {
-      h.status = 'retired';
-      touch(g, h.id);
-      addInbox(g, { kind: 'season', title: `${h.name} geht in den Ruhestand`, body: `${h.name} beendet mit ${age} Jahren die Rennkarriere.`, horseId: h.id });
+      const out = retireRacehorse(g, h, r.fork('retire', h.id), mares, false);
+      addInbox(g, {
+        kind: 'season',
+        title: `${h.name} beendet die Rennkarriere`,
+        body:
+          out === 'broodmare'
+            ? `${h.name} geht mit ${age} Jahren als Zuchtstute in dein Gestüt (Gestüt → Stuten).`
+            : `${h.name} geht mit ${age} Jahren in den Ruhestand.`,
+        horseId: h.id,
+      });
     }
   }
-  // Neue Zweijährige aus eigener Zucht der Besitzer (bis Phase 4 generiert, mit Abstammung)
+  // Zucht: Hengste, Stuten, Nachwuchs aus eigener Zucht geht ins Training
+  breedingTurnover(g, r.fork('breeding'));
+  // Fehlende Pferde: Zukäufe (Importe mit Vater aus dem Register); der Spieler erhält in den
+  // ersten Jahren noch Zweijährige aus der Zucht seines Besitzers, bis die eigene Zucht greift
+  const gift = g.season <= g.startSeason + 2;
   for (const s of sortedById(Object.values(g.stables))) {
     if (s.kind === 'market') continue;
     const active = Object.values(g.horses).filter((h) => h.stableId === s.id && h.status === 'active').length;
-    const add = s.kind === 'player' ? Math.max(0, Math.min(2, s.facilities.boxes - active)) : Math.max(0, g.config.horsesPerStable - active);
+    const add = s.kind === 'player' ? (gift ? Math.max(0, Math.min(2, s.facilities.boxes - active)) : 0) : Math.max(0, g.config.horsesPerStable - active);
     const sr = r.fork('crop', s.id);
     const avg = s.kind === 'player' ? 57 : 60;
+    // KI: zu große Lots (eigene Zucht plus Zukäufe) – die schwächsten Älteren gehen
+    const cap = g.config.horsesPerStable + 3;
+    if (s.kind === 'ai' && active > cap) {
+      const extra = horsesOfStable(g, s.id)
+        .filter((h) => g.season - h.foalYear >= 3)
+        .sort((a, b) => aiLevel(a) - aiLevel(b))
+        .slice(0, active - cap);
+      for (const h of extra) retireRacehorse(g, h, sr.fork('surplus', h.id), mares, false);
+    }
     for (let i = 0; i < add; i++) {
-      const h = breedHorse(
-        g,
-        sr,
-        {
-          id: `h${++g.counters.horse}`,
-          name: names.horseName(sr),
-          stableId: s.id,
-          foalYear: g.season - 2,
-          season: g.season,
-          week: 1,
-          trainedLevel: 0.9,
-          damQuality: sr.normal(avg, s.kind === 'player' ? 4 : 7),
-        },
-        names,
-      );
-      g.horses[h.id] = h;
-      touch(g, h.id);
+      importHorse(g, sr.fork(i), names, {
+        stableId: s.id,
+        foalYear: g.season - 2,
+        damQuality: sr.normal(avg, s.kind === 'player' ? 4 : 7),
+        status: 'active',
+        trainedLevel: 0.9,
+      });
     }
   }
   staffTurnover(g);
@@ -260,6 +283,11 @@ export function seasonTurnover(g: GameState): void {
   addInbox(g, {
     kind: 'season',
     title: `Saisonbilanz ${prev}`,
-    body: `${myRuns.length} Starts, ${wins} Siege, Preisgeld ${formatMoney(prize)}. Ergebnis der Saison ${formatMoney(net)}, Kontostand ${formatMoney(player.balance)}. ${retired} Pferde der Konkurrenz gingen in den Ruhestand. Neue Zweijährige aus der Zucht deines Besitzers sind eingetroffen (soweit Boxen frei waren).`,
+    body:
+      `${myRuns.length} Starts, ${wins} Siege, Preisgeld ${formatMoney(prize)}. Ergebnis der Saison ${formatMoney(net)}, Kontostand ${formatMoney(player.balance)}. ${retired} Pferde der Konkurrenz gingen in den Ruhestand. ` +
+      (gift
+        ? 'Neue Zweijährige aus der Zucht deines Besitzers sind eingetroffen (soweit Boxen frei waren). '
+        : '') +
+      'Die Decksaison beginnt: Im Gestüt kannst du für jede Stute einen Hengst wählen.',
   });
 }

@@ -12,8 +12,8 @@ import {
   stableEffects,
   stars,
 } from '../staff/staff';
-import { FACILITY_INFO, facilityUpkeep, type FacilityKey, MAX_BOXES } from '../economy/finance';
-import { publicSireQuality } from '../economy/stallions';
+import { FACILITY_INFO, facilityUpkeep, type FacilityKey, MAX_BOXES, STUD_MAX_LEVEL } from '../economy/finance';
+import { publicSireQuality, studHorses, studPlaces } from '../breeding/stud';
 import { agentReport, AUCTION_SCHEDULE, increment, lotPublicValue } from '../market/auction';
 import { freeBoxes } from '../market/transfer';
 import { formLabel } from '../horse/training';
@@ -183,6 +183,11 @@ export const LEDGER_LABEL: Record<LedgerKind, string> = {
   prize_share: 'Erfolgsbeteiligungen',
   salary: 'Gehälter',
   upkeep: 'Unterhalt Pferde',
+  stud_fee: 'Decktaxen',
+  stud_income: 'Decktaxen-Einnahmen',
+  stud_upkeep: 'Gestüt (Stuten, Nachwuchs)',
+  boarding_fee: 'Einstellgebühren',
+  partner: 'Teilhaberschaften',
   vet: 'Tierarzt',
   facility: 'Anlage',
   interest: 'Zinsen',
@@ -297,13 +302,14 @@ export interface FacilitiesView {
   used: number;
   maxBoxes: number;
   upkeep: number;
-  items: Array<{ key: FacilityKey; label: string; cost: number; upkeep: number; effect: string; owned: boolean; canBuild: boolean }>;
+  items: Array<{ key: FacilityKey; label: string; cost: number; upkeep: number; effect: string; owned: boolean; canBuild: boolean; level: number | null; maxLevel: number | null }>;
+  stud: { level: number; places: number; used: number };
 }
 
 export function facilitiesView(g: GameState): FacilitiesView {
   const st = g.stables[g.playerStableId]!;
   const f = st.facilities;
-  const keys: FacilityKey[] = ['boxes', 'pool', 'hill', 'clinic'];
+  const keys: FacilityKey[] = ['boxes', 'pool', 'hill', 'clinic', 'stud'];
   return {
     boxes: f.boxes,
     used: horsesOfStable(g, st.id).length,
@@ -311,7 +317,8 @@ export function facilitiesView(g: GameState): FacilitiesView {
     upkeep: facilityUpkeep(f),
     items: keys.map((key) => {
       const info = FACILITY_INFO[key];
-      const owned = key === 'boxes' ? false : f[key];
+      const level = key === 'stud' ? (f.stud ?? 0) : null;
+      const owned = key === 'boxes' ? false : key === 'stud' ? (f.stud ?? 0) >= STUD_MAX_LEVEL : !!f[key];
       return {
         key,
         label: info.label,
@@ -320,8 +327,11 @@ export function facilitiesView(g: GameState): FacilitiesView {
         effect: info.effect,
         owned,
         canBuild: !owned && (key !== 'boxes' || f.boxes + 4 <= MAX_BOXES),
+        level,
+        maxLevel: key === 'stud' ? STUD_MAX_LEVEL : null,
       };
     }),
+    stud: { level: f.stud ?? 0, places: studPlaces(st), used: studHorses(g, st.id).length },
   };
 }
 

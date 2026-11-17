@@ -1,9 +1,11 @@
 import { Rng } from '../rng';
-import type { Horse, LedgerEntry, RaceInstance, Stable, Staff } from '../types';
+import type { Horse, LedgerEntry, RaceInstance, Stable, Staff, Stallion } from '../types';
 import { conformationOf } from '../horse/generate';
 import { NameRegistry, PersonNameRegistry } from '../world/names';
 import { generateStaff, refreshStaffPool, salaryDemand, signContract } from '../staff/staff';
-import { assignPedigree, generateStallions } from '../economy/stallions';
+import { assignPedigree, createFounderMares, createFounderStallions } from '../breeding/stud';
+import { initGenetics } from '../breeding/genetics';
+import { aiPlanMatings, COVER_LAST_WEEK, seedPregnancies } from '../breeding/cycle';
 import { recordBalance } from '../economy/finance';
 import { updateValues } from '../economy/value';
 import { auctionWeek } from '../market/auction';
@@ -39,14 +41,15 @@ interface V1Jockey {
   placeholder: boolean;
 }
 
-export const SAVE_VERSION = 2;
+export const SAVE_VERSION = 3;
 
 /** Liefert true, wenn migriert wurde. */
 export function migrateGame(raw: Record<string, unknown>): boolean {
   const version = raw.version as number;
   if (version === SAVE_VERSION) return false;
-  if (version !== 1) throw new Error(`Spielstand-Version ${version} wird nicht unterstützt.`);
-  migrateV1(raw);
+  if (version !== 1 && version !== 2) throw new Error(`Spielstand-Version ${version} wird nicht unterstützt.`);
+  if (version === 1) migrateV1(raw);
+  migrateV2(raw);
   return true;
 }
 
@@ -63,11 +66,12 @@ function migrateV1(raw: Record<string, unknown>): void {
   void _fee;
   g.config = { ...DEFAULT_CONFIG, ...(cfg as Partial<GameState['config']>) };
 
-  g.version = 2;
+  (g as { version: number }).version = 2;
   g.staff = {};
   g.stallions = {};
   g.auctions = {};
   g.offers = [];
+  g.breeding = { plans: {}, pregnancies: {}, barren: [] };
   g.finance = { balanceHistory: [], overdraftWeeks: 0, horses: {} };
   g.counters = { ...g.counters, staff: 0, offer: 0, lot: 0 };
   g.touchedHorses = [];
@@ -142,8 +146,9 @@ function migrateV1(raw: Record<string, unknown>): void {
 
   // Register, Pool, Startteam
   const names = new NameRegistry(usedHorseNames(g));
-  generateStallions(g, r.fork('stallions'), names);
-  for (const h of sortedById(Object.values(g.horses))) if (!h.sireName) assignPedigree(g, h, r.fork('ped', h.id), names);
+  initGenetics(g, r.fork('genetics'), names);
+  createFounderStallions(g, r.fork('stallions'), names);
+  for (const h of sortedById(Object.values(g.horses))) if (!h.sireName && h.status === 'active') assignPedigree(g, h, r.fork('ped', h.id), names);
   const people = new PersonNameRegistry(Object.values(g.staff).map((s) => s.name));
   const team = hireStarterTeam(g, r.fork('team'), people);
   const groom = team.find((s) => s.role === 'groom')!;
@@ -173,5 +178,55 @@ function migrateV1(raw: Record<string, unknown>): void {
       'Dein Spielstand wurde auf die neue Version gehoben. Neu sind Personal (Pfleger, Arbeitsreiter, Datenanalyst, Tierarzt …), ' +
       'Gehälter und Unterhalt statt der Trainingspauschale, Marktwerte, Transfermarkt, Auktionen und Claiming-Rennen. ' +
       'Ein Pfleger, ein Arbeitsreiter und ein junger Datenanalyst wurden für dich eingestellt.',
+  });
+}
+
+interface V2Stallion {
+  id: string;
+  name: string;
+  foalYear: number;
+  fee: number;
+  quality: number;
+  active: boolean;
+}
+
+/**
+ * Version 2 → 3 (Phase 4, Zucht): Hengste des Registers werden Pferde (gleiche IDs, damit die
+ * Abstammung gültig bleibt), KI-Ställe und Züchter erhalten Stutenherden, Genetik und Deckpläne
+ * werden angelegt.
+ */
+function migrateV2(raw: Record<string, unknown>): void {
+  const g = raw as unknown as GameState;
+  const r = new Rng(g.seed).fork('migrate-v3');
+  g.version = 3;
+  g.breeding = { plans: {}, pregnancies: {}, barren: [] };
+  const names = new NameRegistry(usedHorseNames(g));
+  if (!g.genetics) initGenetics(g, r.fork('genetics'), names);
+  const old = Object.values(g.stallions as unknown as Record<string, V2Stallion | Stallion>);
+  const isOld = old.length > 0 && 'quality' in old[0]!;
+  if (isOld) {
+    const preset = sortedById(old as V2Stallion[]).map((x) => ({ id: x.id, name: x.name, foalYear: x.foalYear, quality: x.quality }));
+    g.stallions = {};
+    createFounderStallions(g, r.fork('stallions'), names, preset.length, preset);
+  } else if (!old.length) {
+    createFounderStallions(g, r.fork('stallions'), names);
+  }
+  for (const st of Object.values(g.stables)) st.facilities.stud = st.facilities.stud ?? 0;
+  const quality: Record<string, number> = {};
+  for (const st of Object.values(g.stables)) if (st.kind === 'ai') quality[st.id] = 55 + (st.reputation - 30) / 2.5;
+  createFounderMares(g, r.fork('mares'), names, quality);
+  if (g.week > COVER_LAST_WEEK) seedPregnancies(g);
+  else aiPlanMatings(g);
+  refreshStaffPool(g, r.fork('pool'), true);
+  for (const h of Object.values(g.horses)) if (!g.touchedHorses.includes(h.id)) g.touchedHorses.push(h.id);
+  updateValues(g);
+  addInbox(g, {
+    kind: 'info',
+    title: 'Neu: Zucht und Generationen',
+    body:
+      'Dein Spielstand wurde auf die neue Version gehoben. Neu sind Genetik, Deckhengste als echte Pferde, ein eigenes Gestüt ' +
+      '(Anlage → Gestüt, Stuten können auch in Pension stehen), der Deckplan in der Decksaison (Januar bis Anfang März), ' +
+      'Fohlen, Jährlinge, eine Zuchtstutenauktion im Dezember, die Zucht-Statistik sowie Teilhaberschaften und Einstellpferde. ' +
+      'Die Decktaxen richten sich jetzt nach der Rennleistung der Hengste und dem Erfolg ihrer Nachkommen.',
   });
 }

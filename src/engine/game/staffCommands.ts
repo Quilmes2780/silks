@@ -1,5 +1,5 @@
 import type { StaffRole } from '../types';
-import { canAfford, FACILITY_INFO, type FacilityKey, MAX_BOXES } from '../economy/finance';
+import { canAfford, FACILITY_INFO, type FacilityKey, MAX_BOXES, STUD_MAX_LEVEL } from '../economy/finance';
 import {
   acceptThreshold,
   type ContractOffer,
@@ -125,11 +125,14 @@ export function upgradeFacility(g: GameState, key: FacilityKey): void {
   if (!info) throw new GameError('Unbekannter Ausbau.');
   if (key === 'boxes') {
     if (st.facilities.boxes + 4 > MAX_BOXES) throw new GameError(`Mehr als ${MAX_BOXES} Boxen sind nicht möglich.`);
+  } else if (key === 'stud') {
+    if ((st.facilities.stud ?? 0) >= STUD_MAX_LEVEL) throw new GameError('Das Gestüt ist voll ausgebaut.');
   } else if (st.facilities[key]) {
     throw new GameError(`${info.label} ist bereits vorhanden.`);
   }
   if (!canAfford(g, st.id, info.cost)) throw new GameError('Das übersteigt deinen Kreditrahmen.');
   addLedger(g, { amount: -info.cost, kind: 'facility', text: `Ausbau: ${info.label}` });
   if (key === 'boxes') st.facilities.boxes += 4;
+  else if (key === 'stud') st.facilities.stud = (st.facilities.stud ?? 0) + 1;
   else st.facilities[key] = true;
 }

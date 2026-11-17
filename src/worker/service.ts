@@ -8,6 +8,7 @@ import * as transfer from '../engine/market/transfer';
 import * as auction from '../engine/market/auction';
 import { toggleClaim } from '../engine/market/claiming';
 import { migrateGame } from '../engine/game/migrate';
+import { compactOldRecords } from '../engine/game/archive';
 import type { GameState } from '../engine/game/state';
 import { bundledWorld } from '../engine/world/bundled';
 import type { Api, ApiType } from './protocol';
@@ -60,9 +61,15 @@ export class GameService {
       .filter((r) => r.weekIndex >= g.weekIndex - 2 || newSeasons.includes(r.season))
       .map((r) => r.id);
     const horses = Object.values(g.horses)
-      .filter((h) => h.status === 'active' || (h.lastRunWeekIndex ?? -99) >= g.weekIndex - 60)
+      .filter((h) => h.status === 'active' || h.status === 'broodmare' || h.status === 'stud' || h.status === 'young' || (h.lastRunWeekIndex ?? -99) >= g.weekIndex - 60)
       .map((h) => h.id);
-    await this.store.save(g, { horses: [...horses, ...g.touchedHorses], runs: newRuns, races: [...races, ...g.touchedRaces], templates }, this.clock.now());
+    // Jahreswechsel: Detaildaten älterer Saisons archivieren
+    const archived = g.week === 1 ? compactOldRecords(g) : { races: [], runs: [] };
+    await this.store.save(
+      g,
+      { horses: [...horses, ...g.touchedHorses], runs: [...newRuns, ...archived.runs], races: [...races, ...g.touchedRaces, ...archived.races], templates },
+      this.clock.now(),
+    );
     g.touchedHorses = [];
     g.touchedRaces = [];
     this.savedRunCounter = g.counters.run;
@@ -100,6 +107,8 @@ export class GameService {
       const g = await this.store.load(saveId);
       if (!g) throw new Error('Spielstand nicht gefunden.');
       const migrated = migrateGame(g as unknown as Record<string, unknown>);
+      // Detaildaten alter Saisons nur im Speicher verkleinern; gespeichert wird beim nächsten Jahreswechsel
+      compactOldRecords(g);
       this.markLoaded(g);
       if (migrated) {
         g.touchedHorses = [];

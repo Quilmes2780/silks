@@ -10,7 +10,9 @@ import { beginWeek, ensureCalendars } from './week';
 import { aiMakeEntries, estimateLevel } from '../ai/ai';
 import { clampOr } from '../stats/rating';
 import { generateStaff, newStaffId, refreshStaffPool, salaryDemand, signContract, staffSkill } from '../staff/staff';
-import { assignPedigree, generateStallions } from '../economy/stallions';
+import { assignPedigree, createFounderMares, createFounderStallions } from '../breeding/stud';
+import { initGenetics } from '../breeding/genetics';
+import { seedPregnancies } from '../breeding/cycle';
 import { recordBalance } from '../economy/finance';
 import { updateValues } from '../economy/value';
 
@@ -94,7 +96,7 @@ export function createGame(o: NewGameOptions): GameState {
   const week = o.startWeek ?? 10;
   const world = o.world;
   const g: GameState = {
-    version: 2,
+    version: 3,
     id: o.id,
     name: o.name,
     createdAt: o.createdAt,
@@ -116,6 +118,8 @@ export function createGame(o: NewGameOptions): GameState {
     stallions: {},
     auctions: {},
     offers: [],
+    genetics: { lines: [], nicks: {}, offsets: {} },
+    breeding: { plans: {}, pregnancies: {}, barren: [] },
     finance: { balanceHistory: [], overdraftWeeks: 0, horses: {} },
     inbox: [],
     ledger: [],
@@ -245,7 +249,8 @@ export function createGame(o: NewGameOptions): GameState {
   });
 
   // ---- Deckhengste ----
-  generateStallions(g, rng.fork('stallions'), names);
+  initGenetics(g, rng.fork('genetics'), names);
+  createFounderStallions(g, rng.fork('stallions'), names);
 
   // ---- Pferde aus der Weltdatei ----
   const hr = rng.fork('horses');
@@ -297,9 +302,13 @@ export function createGame(o: NewGameOptions): GameState {
 
   // ---- Abstammung, Vorgeschichte und Start-Ratings ----
   const pedr = rng.fork('pedigree');
-  for (const h of sortedById(Object.values(g.horses))) if (!h.sireName) assignPedigree(g, h, pedr.fork(h.id), names);
+  for (const h of sortedById(Object.values(g.horses))) if (!h.sireName && h.status === 'active') assignPedigree(g, h, pedr.fork(h.id), names);
   const rr = rng.fork('records');
-  for (const h of Object.values(g.horses)) seedRecord(h, rr.fork(h.id), season);
+  for (const h of Object.values(g.horses)) if (h.status === 'active') seedRecord(h, rr.fork(h.id), season);
+
+  // ---- Zuchtstuten von KI-Ställen und Züchtern, Trächtigkeiten aus der Decksaison ----
+  createFounderMares(g, rng.fork('mares'), names, stableQuality);
+  seedPregnancies(g);
 
   // ---- Personal des Spielers und Bewerberpool ----
   const team = hireStarterTeam(g, rng.fork('team'), people);

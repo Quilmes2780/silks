@@ -1,7 +1,9 @@
 import { deriveSeed, Rng } from '../rng';
 import type { Auction, AuctionKind, Horse, Lot } from '../types';
-import { breedHorse } from '../economy/stallions';
-import { marketValue, unracedLevel, valueFromLevel } from '../economy/value';
+import { importHorse, startTraining, studHorses } from '../breeding/stud';
+import { mareCounts } from '../breeding/cycle';
+import { aiMareTarget } from '../breeding/stud';
+import { broodmareValue, marketValue, unracedLevel, valueFromLevel } from '../economy/value';
 import { canAfford } from '../economy/finance';
 import { aiLevel } from '../ai/ai';
 import { PAR_FIGURE, PAR_QUALITY } from '../stats/speedFigure';
@@ -30,6 +32,7 @@ export const AUCTION_SCHEDULE: Array<{ kind: AuctionKind; week: number; name: st
   { kind: 'breeze_up', week: 15, name: 'Breeze-up-Auktion', lots: 30 },
   { kind: 'yearling', week: 40, name: 'Jährlingsauktion', lots: 80 },
   { kind: 'horses_in_training', week: 46, name: 'Horses-in-Training-Auktion', lots: 0 },
+  { kind: 'broodmare', week: 49, name: 'Zuchtstutenauktion', lots: 0 },
 ];
 export const CATALOGUE_WEEKS = 3;
 export const AUCTION_COMMISSION = 0.05;
@@ -52,6 +55,7 @@ export function breezeTime(h: Horse, r: Rng): number {
 /** Bewertung eines Loses aus öffentlicher Sicht (Abstammung, Exterieur, Breeze-Zeit). */
 export function lotPublicValue(g: GameState, lot: Lot): number {
   const h = g.horses[lot.horseId]!;
+  if (h.status === 'broodmare') return broodmareValue(g, h);
   if (h.stats.starts > 0 || h.officialRating !== null) return marketValue(g, h);
   const breeze = lot.breezeTimeS !== null ? (22.4 - lot.breezeTimeS) * 3 : 0;
   return valueFromLevel(h, unracedLevel(g, h, breeze), g.season - h.foalYear);
@@ -59,6 +63,7 @@ export function lotPublicValue(g: GameState, lot: Lot): number {
 
 /** Bewertung durch einen Stall mit eigenem Gutachter (Rauschen sd in Attributpunkten). */
 export function appraisedValue(g: GameState, h: Horse, sd: number, z: number): number {
+  if (h.status === 'broodmare') return broodmareValue(g, h) * Math.exp(z * 0.12);
   if (h.stats.starts > 0 || h.officialRating !== null) return marketValue(g, h) * Math.exp(z * 0.1);
   const q = trueQuality(h) + z * sd;
   return valueFromLevel(h, PAR_FIGURE + 2 * (q - PAR_QUALITY) - 8, g.season - h.foalYear);
@@ -67,6 +72,17 @@ export function appraisedValue(g: GameState, h: Horse, sd: number, z: number): n
 function computeAiMax(g: GameState, lot: Lot, r: Rng): Lot['aiMax'] {
   const h = g.horses[lot.horseId]!;
   const out: Lot['aiMax'] = [];
+  if (h.status === 'broodmare') {
+    const counts = mareCounts(g);
+    for (const st of sortedById(Object.values(g.stables))) {
+      if (st.kind !== 'ai' || st.id === lot.consignorId) continue;
+      if ((counts.get(st.id) ?? 0) >= aiMareTarget(g, st.id) + 1) continue;
+      const sr = r.fork(st.id);
+      if (!sr.chance(0.35)) continue;
+      out.push({ stableId: st.id, max: roundPrice(appraisedValue(g, h, 0, sr.normal(0, 1)) * Math.max(0.6, sr.normal(1, 0.12))) });
+    }
+    return out.sort((a, b) => b.max - a.max).slice(0, 5);
+  }
   for (const st of sortedById(Object.values(g.stables))) {
     if (st.kind !== 'ai' || st.id === lot.consignorId) continue;
     const sr = r.fork(st.id);
@@ -119,31 +135,42 @@ export function createCatalogue(g: GameState, kind: AuctionKind, season: number)
   const r = new Rng(g.seed).fork('auction', a.id);
   const names = new NameRegistry(usedHorseNames(g));
   if (kind === 'breeze_up' || kind === 'yearling') {
+    // Nachwuchs der Züchter (Jährlinge bzw. Zweijährige), die besten zuerst; fehlende Lose sind Importe
     const age = kind === 'breeze_up' ? 2 : 1;
-    for (let i = 0; i < s.lots; i++) {
-      const hr = r.fork('lot', i);
-      const h = breedHorse(
-        g,
-        hr,
-        {
-          id: `h${++g.counters.horse}`,
-          name: names.horseName(hr),
-          stableId: MARKET_STABLE_ID,
-          foalYear: season - age,
-          season: g.season,
-          week: g.week,
-          trainedLevel: kind === 'breeze_up' ? 0.9 : 0.6,
-          damQuality: hr.normal(58, 6),
-        },
-        names,
-      );
-      g.horses[h.id] = h;
-      touch(g, h.id);
+    const own = studHorses(g, MARKET_STABLE_ID)
+      .filter((h) => h.status === 'young' && season - h.foalYear === age)
+      .sort((x, y) => unracedLevel(g, y) - unracedLevel(g, x))
+      .slice(0, s.lots);
+    const horses = [...own];
+    for (let i = own.length; i < s.lots; i++) {
+      const hr = r.fork('import', i);
+      horses.push(importHorse(g, hr, names, { stableId: MARKET_STABLE_ID, foalYear: season - age, damQuality: hr.normal(58, 6), status: 'young' }));
+    }
+    for (const h of horses) {
+      const hr = r.fork('lot', h.id);
+      if (kind === 'breeze_up') {
+        startTraining(g, h, hr.fork('training'));
+      }
       const breeze = kind === 'breeze_up' ? breezeTime(h, hr) : null;
       const lot = newLot(g, h, MARKET_STABLE_ID, 0, breeze, hr);
       lot.reserve = roundPrice(Math.max(2000, lotPublicValue(g, lot) * 0.45));
       lot.currentBid = lot.reserve;
       a.lots.push(lot);
+    }
+    // Jährlinge des Spielers können eingeliefert werden (Katalog bleibt offen)
+  } else if (kind === 'broodmare') {
+    // KI-Ställe geben überzählige und ältere Stuten ab, die Züchter ihre schwächsten
+    const counts = mareCounts(g);
+    for (const st of sortedById(Object.values(g.stables))) {
+      if (st.kind === 'player') continue;
+      const mares = studHorses(g, st.id)
+        .filter((h) => h.status === 'broodmare')
+        .sort((x, y) => broodmareValue(g, x) - broodmareValue(g, y));
+      const target = st.kind === 'market' ? mares.length - 8 : aiMareTarget(g, st.id);
+      const surplus = Math.max(0, (counts.get(st.id) ?? 0) - target);
+      const old = mares.filter((h) => season - h.foalYear >= 17).slice(0, 1);
+      const pick = [...mares.slice(0, surplus), ...old.filter((h) => !mares.slice(0, surplus).includes(h))];
+      for (const h of pick) a.lots.push(newLot(g, h, st.id, broodmareValue(g, h) * 0.5, null, r.fork('mare', h.id)));
     }
   } else {
     // KI-Ställe geben schwächere ältere Pferde und Überzählige ab
@@ -163,7 +190,7 @@ export function createCatalogue(g: GameState, kind: AuctionKind, season: number)
     kind: 'market',
     title: `Katalog: ${a.name}`,
     body: `Der Katalog mit ${a.lots.length} Losen ist erschienen. Die Auktion findet in Woche ${a.week} statt. Unter Markt → Auktionen kannst du die Lose prüfen${
-      kind === 'horses_in_training' ? ', eigene Pferde einliefern' : ''
+      kind !== 'breeze_up' ? ', eigene Pferde einliefern' : ''
     } und Auto-Gebote setzen.`,
   });
   return a;
@@ -222,6 +249,7 @@ function unsold(g: GameState, lot: Lot): void {
   lot.status = 'unsold';
   const h = g.horses[lot.horseId]!;
   if (lot.consignorId === MARKET_STABLE_ID) {
+    if (h.status === 'young') return;
     h.status = 'retired';
     touch(g, h.id);
   } else if (lot.consignorId === g.playerStableId) {
@@ -229,8 +257,13 @@ function unsold(g: GameState, lot: Lot): void {
   }
 }
 
-function playerCanBuy(g: GameState, price: number): boolean {
-  return freeBoxes(g) > 0 && canAfford(g, g.playerStableId, price);
+/** Braucht das Pferd eine Box im Rennstall? (Nachwuchs und Stuten stehen im Gestüt) */
+export function needsBox(h: Horse): boolean {
+  return h.status === 'active';
+}
+
+function playerCanBuy(g: GameState, h: Horse, price: number): boolean {
+  return (!needsBox(h) || freeBoxes(g) > 0) && canAfford(g, g.playerStableId, price);
 }
 
 export interface BidResult {
@@ -253,7 +286,8 @@ export function bid(g: GameState, lotId: string, amount?: number): BidResult {
   if (lot.leaderId === g.playerStableId) throw new MarketError('Du führst bereits.');
   const min = lot.leaderId === null ? lot.currentBid : lot.currentBid + increment(lot.currentBid);
   const price = Math.max(min, roundPrice(amount ?? min));
-  if (!playerCanBuy(g, price)) throw new MarketError(freeBoxes(g) <= 0 ? 'Keine freie Box.' : 'Das übersteigt deinen Kreditrahmen.');
+  const horse = g.horses[lot.horseId]!;
+  if (!playerCanBuy(g, horse, price)) throw new MarketError(needsBox(horse) && freeBoxes(g) <= 0 ? 'Keine freie Box.' : 'Das übersteigt deinen Kreditrahmen.');
   lot.currentBid = price;
   lot.leaderId = g.playerStableId;
   const rival = effectiveBidders(g, lot).find((b) => b.max >= price + increment(price));
@@ -289,7 +323,7 @@ export function resolveLot(g: GameState, a: Auction, lot: Lot): void {
   if (lot.status !== 'pending') return;
   const bidders: Array<{ stableId: string; max: number }> = [...effectiveBidders(g, lot)];
   if (lot.playerLimit !== null && lot.consignorId !== g.playerStableId) {
-    const cap = Math.min(lot.playerLimit, freeBoxes(g) > 0 ? g.stables[g.playerStableId]!.balance + g.config.overdraftLimit : 0);
+    const cap = Math.min(lot.playerLimit, !needsBox(g.horses[lot.horseId]!) || freeBoxes(g) > 0 ? g.stables[g.playerStableId]!.balance + g.config.overdraftLimit : 0);
     if (cap >= lot.reserve) bidders.push({ stableId: g.playerStableId, max: cap });
   }
   if (lot.leaderId === g.playerStableId && !bidders.some((b) => b.stableId === g.playerStableId)) {
@@ -325,12 +359,22 @@ export function closeAuctions(g: GameState): void {
   for (const a of sortedById(Object.values(g.auctions))) if (a.status === 'live' && a.weekIndex === g.weekIndex) finishAuction(g, a.id);
 }
 
-/** Eigenes Pferd in die Horses-in-Training-Auktion einliefern. */
+/** Welche eigenen Pferde passen in welche Auktion? */
+export function consignable(g: GameState, kind: AuctionKind, h: Horse): boolean {
+  if (h.boarding) return false;
+  if (kind === 'horses_in_training') return h.status === 'active';
+  if (kind === 'yearling') return h.status === 'young' && g.season - h.foalYear === 1;
+  if (kind === 'broodmare') return h.status === 'broodmare';
+  return false;
+}
+
+/** Eigenes Pferd in eine Auktion einliefern (Horses in Training, Jährlinge, Zuchtstuten). */
 export function consign(g: GameState, horseId: string, auctionId: string, reserve: number): void {
   const a = g.auctions[auctionId];
-  if (!a || a.kind !== 'horses_in_training' || a.status !== 'catalogue') throw new MarketError('In diese Auktion kann nicht (mehr) eingeliefert werden.');
+  if (!a || a.kind === 'breeze_up' || a.status !== 'catalogue') throw new MarketError('In diese Auktion kann nicht (mehr) eingeliefert werden.');
   const h = g.horses[horseId];
-  if (!h || h.stableId !== g.playerStableId || h.status !== 'active') throw new MarketError('Das Pferd gehört nicht zu deinem Stall.');
+  if (!h || h.stableId !== g.playerStableId) throw new MarketError('Das Pferd gehört nicht zu deinem Stall.');
+  if (!consignable(g, a.kind, h)) throw new MarketError('Das Pferd passt nicht in diese Auktion.');
   const existing = a.lots.find((l) => l.horseId === horseId && l.status === 'pending');
   if (existing) {
     existing.reserve = roundPrice(Math.max(1000, reserve));

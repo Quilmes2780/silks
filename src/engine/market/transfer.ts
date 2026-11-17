@@ -76,6 +76,7 @@ export function transferHorse(g: GameState, horseId: string, toStableId: string,
     acc.toWeekIndex = g.weekIndex;
   }
   scratchFutureEntries(g, horseId);
+  delete g.breeding.plans[horseId];
   for (const o of g.offers) if (o.horseId === horseId && (o.status === 'open' || o.status === 'countered')) o.status = 'withdrawn';
   h.stableId = toStableId;
   h.purchase = { price, weekIndex: g.weekIndex, fromStableId: from, via };

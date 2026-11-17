@@ -17,6 +17,12 @@ export interface GenerateHorseOptions {
   /** Wie weit das Pferd bereits trainiert ist (0–1 Anteil der Obergrenze) */
   trainedLevel?: number;
   distOptM?: number;
+  /** Phase 4: Ausprägung aus der Genetik statt Zufall */
+  potential?: Attributes;
+  going?: number;
+  colour?: Colour;
+  markings?: Markings;
+  legRiskFactor?: number;
 }
 
 export const DEFAULT_TRAINING: TrainingPlan = ['canter', 'gallop', 'canter', 'sprints', 'canter', 'gallop'];
@@ -106,9 +112,12 @@ export function conformationOf(potential: Attributes, rng: Rng): number {
   return Math.round(Math.max(1, Math.min(100, phys + rng.normal(0, 6))));
 }
 
+const legRisk = (f: number): [number, number, number, number] => [0.3 * f, 0.3 * f, 0.2 * f, 0.2 * f].map((x) => Math.round(x * 1000) / 1000) as [number, number, number, number];
+
 export function generateHorse(rng: Rng, o: GenerateHorseOptions): Horse {
   const prefs = generatePreferences(rng, o.distOptM);
-  const potential = generatePotential(rng, o.quality, prefs.distOptM);
+  if (o.going !== undefined) prefs.going = o.going;
+  const potential = o.potential ? { ...o.potential } : generatePotential(rng, o.quality, prefs.distOptM);
   prefs.runStyle = deriveRunStyle(potential, rng);
   const maturity = generateMaturity(rng, prefs.distOptM);
   const sex: Sex = o.sex ?? (rng.chance(0.5) ? 'male' : 'female');
@@ -129,8 +138,8 @@ export function generateHorse(rng: Rng, o: GenerateHorseOptions): Horse {
     sex,
     gelded,
     foalYear: o.foalYear,
-    colour: generateColour(rng),
-    markings: generateMarkings(rng),
+    colour: o.colour ?? generateColour(rng),
+    markings: o.markings ?? generateMarkings(rng),
     sireId: null,
     damId: null,
     sireName: null,
@@ -146,7 +155,7 @@ export function generateHorse(rng: Rng, o: GenerateHorseOptions): Horse {
     condition: {
       fitness: Math.round(rng.range(70, 92)),
       freshness: Math.round(rng.range(80, 100)),
-      legRisk: [0.3, 0.3, 0.2, 0.2],
+      legRisk: legRisk(o.legRiskFactor ?? 1),
       injury: null,
     },
     training: [...DEFAULT_TRAINING] as TrainingPlan,

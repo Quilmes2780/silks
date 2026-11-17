@@ -1,6 +1,6 @@
 import type { Horse } from '../types';
 import { PAR_FIGURE, PAR_QUALITY } from '../stats/speedFigure';
-import { publicSireQuality } from './stallions';
+import { publicSireQuality, raceRecordLevel } from '../breeding/stud';
 import { type GameState, sortedById } from '../game/state';
 
 /**
@@ -25,7 +25,13 @@ export function publicLevel(g: GameState, h: Horse): number {
 export function unracedLevel(g: GameState, h: Horse, extraQuality = 0): number {
   const sire = h.sireId ? g.stallions[h.sireId] : undefined;
   const sireQ = sire ? publicSireQuality(sire) : 60;
-  const q = 0.5 * sireQ + 0.5 * h.conformation + extraQuality;
+  // Mutter mit Rennleistung: ihr Niveau fließt mit ein (Rating-Skala → Attributskala)
+  const dam = h.damId ? g.horses[h.damId] : undefined;
+  const damLevel = dam ? raceRecordLevel(dam) : null;
+  const q =
+    damLevel !== null
+      ? 0.4 * sireQ + 0.2 * ((damLevel + 55) / 2) + 0.4 * h.conformation + extraQuality
+      : 0.5 * sireQ + 0.5 * h.conformation + extraQuality;
   // Abschlag: ungeprüftes Pferd, Reife ungewiss
   return PAR_FIGURE + 2 * (q - PAR_QUALITY) - 8;
 }
@@ -46,15 +52,68 @@ export function valueFromLevel(h: Horse, level: number, age: number): number {
   return Math.round(v / step) * step;
 }
 
+const round = (v: number) => {
+  const step = v < 20000 ? 250 : v < 100000 ? 1000 : v < 1000000 ? 5000 : 25000;
+  return Math.round(v / step) * step;
+};
+
+/** Bestes Official Rating der Nachkommen je Mutterstute (pro Woche einmal berechnet). */
+let progenyCache: { g: GameState; weekIndex: number; n: number; map: Map<string, number> } | null = null;
+function bestProgeny(g: GameState): Map<string, number> {
+  const n = g.counters.horse;
+  if (progenyCache && progenyCache.g === g && progenyCache.weekIndex === g.weekIndex && progenyCache.n === n) return progenyCache.map;
+  const map = new Map<string, number>();
+  for (const x of Object.values(g.horses)) {
+    if (!x.damId || x.officialRating === null) continue;
+    if (x.officialRating > (map.get(x.damId) ?? 0)) map.set(x.damId, x.officialRating);
+  }
+  progenyCache = { g, weekIndex: g.weekIndex, n, map };
+  return map;
+}
+
+/** Zuchtstute: Rennleistung, Nachkommen, Alter und Trächtigkeit. */
+export function broodmareValue(g: GameState, h: Horse): number {
+  const level = raceRecordLevel(h) ?? 62;
+  const age = g.season - h.foalYear;
+  let v = 6000 * Math.exp((level - 70) / 14);
+  // beste Nachkommen erhöhen den Wert
+  const best = bestProgeny(g).get(h.id) ?? 0;
+  if (best >= 80) v *= 1 + (best - 75) / 25;
+  v *= age <= 10 ? 1 : Math.max(0.15, 1 - 0.09 * (age - 10));
+  const preg = g.breeding.pregnancies[`${h.id}:${g.season}`] ?? g.breeding.pregnancies[`${h.id}:${g.season - 1}`];
+  if (preg) v += 0.6 * (g.stallions[preg.sireId]?.fee ?? 0);
+  return round(Math.max(1500, v));
+}
+
+/** Deckhengst: Decktaxe mal erwarteter Buchgröße über die restlichen Deckjahre. */
+export function stallionValue(g: GameState, h: Horse): number {
+  const s = g.stallions[h.id];
+  if (!s || !s.active) return 0;
+  const age = g.season - h.foalYear;
+  const ageF = Math.max(0.15, Math.min(1, 1 - (age - 6) / 16));
+  return round(Math.max(5000, s.fee * 45 * ageF));
+}
+
 export function marketValue(g: GameState, h: Horse): number {
-  if (h.status !== 'active') return 0;
-  return valueFromLevel(h, publicLevel(g, h), g.season - h.foalYear);
+  const age = g.season - h.foalYear;
+  switch (h.status) {
+    case 'active':
+      return valueFromLevel(h, publicLevel(g, h), age);
+    case 'young':
+      return round(valueFromLevel(h, unracedLevel(g, h), age) * (age === 0 ? 0.6 : 1));
+    case 'broodmare':
+      return broodmareValue(g, h);
+    case 'stud':
+      return stallionValue(g, h);
+    default:
+      return 0;
+  }
 }
 
 /** Werte aller aktiven Pferde aktualisieren; Verlaufspunkt alle 4 Wochen oder bei deutlicher Änderung. */
 export function updateValues(g: GameState): void {
   for (const h of sortedById(Object.values(g.horses))) {
-    if (h.status !== 'active') continue;
+    if (h.status === 'retired') continue;
     const v = marketValue(g, h);
     h.value = v;
     const last = h.valueHistory.at(-1);

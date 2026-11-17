@@ -1,6 +1,7 @@
 import type { Facilities, LedgerKind } from '../types';
 import { addInbox, book, formatMoney, type GameState, horseAccount, horsesOfStable, sortedById } from '../game/state';
 import { marketValue } from './value';
+import { OWN_STUD_COST, STALLION_UPKEEP, STUD_LEVEL_COST, STUD_LEVEL_UPKEEP, STUD_MAX_LEVEL, STUD_PLACES_PER_LEVEL, studHorses, studWeeklyCost, stallionsOf, inOwnStud, EXTERNAL_STUD_COST } from '../breeding/stud';
 
 /**
  * Finanzen: Unterhalt, Anlagenkosten, Dispozinsen, Zwangsverkauf, Ruf, Kontoverlauf.
@@ -8,19 +9,32 @@ import { marketValue } from './value';
  * Pferde des Spielers verteilt, damit Kosten je Pferd und ROI vollständig sind.
  */
 
-export type FacilityKey = 'boxes' | 'pool' | 'hill' | 'clinic';
+export type FacilityKey = 'boxes' | 'pool' | 'hill' | 'clinic' | 'stud';
 
 export const FACILITY_INFO: Record<FacilityKey, { label: string; cost: number; upkeep: number; effect: string }> = {
   boxes: { label: '4 weitere Boxen', cost: 40000, upkeep: 12, effect: 'Platz für 4 weitere Pferde (Unterhalt je Box)' },
   pool: { label: 'Schwimmbecken', cost: 120000, upkeep: 250, effect: 'Schwimmen statt Weide: mehr Erholung, −5 % Verletzungsrisiko' },
   hill: { label: 'Bergstrecke', cost: 150000, upkeep: 180, effect: 'volles Bergtraining (ohne: 60 % Wirkung)' },
   clinic: { label: 'Tierklinik', cost: 200000, upkeep: 400, effect: '20 % kürzere Ausfallzeiten, −5 % Verletzungsrisiko' },
+  stud: {
+    label: `Gestüt (+${STUD_PLACES_PER_LEVEL} Plätze)`,
+    cost: STUD_LEVEL_COST,
+    upkeep: STUD_LEVEL_UPKEEP,
+    effect: `Weiden und Abfohlboxen für ${STUD_PLACES_PER_LEVEL} Stuten oder Nachwuchs: £${OWN_STUD_COST} statt £${EXTERNAL_STUD_COST} Pension je Pferd und Woche; mit Gestütsleiter höhere Trächtigkeitsrate`,
+  },
 };
+export { STUD_MAX_LEVEL };
 
 export const MAX_BOXES = 80;
 
 export function facilityUpkeep(f: Facilities): number {
-  return f.boxes * FACILITY_INFO.boxes.upkeep + (f.pool ? FACILITY_INFO.pool.upkeep : 0) + (f.hill ? FACILITY_INFO.hill.upkeep : 0) + (f.clinic ? FACILITY_INFO.clinic.upkeep : 0);
+  return (
+    f.boxes * FACILITY_INFO.boxes.upkeep +
+    (f.pool ? FACILITY_INFO.pool.upkeep : 0) +
+    (f.hill ? FACILITY_INFO.hill.upkeep : 0) +
+    (f.clinic ? FACILITY_INFO.clinic.upkeep : 0) +
+    (f.stud ?? 0) * FACILITY_INFO.stud.upkeep
+  );
 }
 
 /** KI-Besitzer schießen Geld nach, wenn der Kontostand zu tief fällt (Mäzene, wie im echten Rennsport). */
@@ -74,10 +88,24 @@ export function financeWeek(g: GameState, playerSalaries: number, sellHorse: (ho
       }
       allocate(g, 'facility', -fac);
       allocate(g, 'salary', -playerSalaries);
+      // Gestüt: eigene Plätze oder Pension, eigene Deckhengste
+      const stud = studWeeklyCost(g, st);
+      if (stud.total) {
+        book(g, st.id, { amount: -stud.total, kind: 'stud_upkeep', text: `Gestüt: ${studHorses(g, st.id).length} Stuten/Nachwuchs, ${stallionsOf(g, st.id).length} Hengste` });
+        for (const h of studHorses(g, st.id)) {
+          const acc = horseAccount(g, h.id);
+          acc.byKind.stud_upkeep = (acc.byKind.stud_upkeep ?? 0) - (inOwnStud(g, h) ? OWN_STUD_COST : EXTERNAL_STUD_COST);
+        }
+        for (const s of stallionsOf(g, st.id)) {
+          const acc = horseAccount(g, s.id);
+          acc.byKind.stud_upkeep = (acc.byKind.stud_upkeep ?? 0) - STALLION_UPKEEP;
+        }
+      }
       out.upkeep = upkeep;
       out.facilities = fac;
     } else {
-      book(g, st.id, { amount: -(upkeep + fac), kind: 'upkeep', text: 'Unterhalt' });
+      const stud = studHorses(g, st.id).length * OWN_STUD_COST + stallionsOf(g, st.id).length * STALLION_UPKEEP;
+      book(g, st.id, { amount: -(upkeep + fac + stud), kind: 'upkeep', text: 'Unterhalt' });
       if (st.balance < AI_PATRON_FLOOR) {
         book(g, st.id, { amount: AI_PATRON_TOPUP, kind: 'other', text: 'Einlage der Besitzer' });
         ECONOMY_DEBUG.patronTopups++;

@@ -2,7 +2,7 @@ import { Rng } from '../rng';
 import type { Horse, RaceInstance, Tactic, TrainingBlock, TrainingPlan } from '../types';
 import { TRAINING_TEMPLATES } from '../horse/training';
 import { checkEligibility, raceLevel } from '../season/rules';
-import type { GameState } from '../game/state';
+import { sortedById, type GameState } from '../game/state';
 import { PAR_FIGURE, PAR_QUALITY } from '../stats/speedFigure';
 
 /**
@@ -46,7 +46,7 @@ function wantsToRun(h: Horse, raceWeekIndex: number, season: number, week: numbe
 
 /** Nennungen aller KI-Ställe für Rennen, deren Nennschluss in dieser Woche liegt. */
 export function aiMakeEntries(g: GameState, catchUp = false): number {
-  const closing = Object.values(g.races).filter((race) => {
+  const closing = sortedById(Object.values(g.races)).filter((race) => {
     const t = g.templates[race.templateId]!;
     if (race.status !== 'open') return false;
     const deadline = race.weekIndex - t.entryDeadlineWeeks;
@@ -55,7 +55,7 @@ export function aiMakeEntries(g: GameState, catchUp = false): number {
   });
   if (!closing.length) return 0;
   const r = new Rng(g.seed).fork('ai-entries', g.weekIndex);
-  const horses = r.shuffle(Object.values(g.horses).filter((h) => h.status === 'active' && !g.stables[h.stableId]!.isPlayer));
+  const horses = r.shuffle(sortedById(Object.values(g.horses)).filter((h) => h.status === 'active' && !g.stables[h.stableId]!.isPlayer));
   // Wochen, in denen ein Pferd bereits genannt ist
   const enteredWeeks = new Map<string, number[]>();
   for (const race of Object.values(g.races)) {

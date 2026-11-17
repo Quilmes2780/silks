@@ -6,7 +6,7 @@ import { buildSeasonCalendar } from '../season/calendar';
 import { NameRegistry } from '../world/names';
 import type { RaceInstance } from '../types';
 import { declareRace, runRace } from './raceDay';
-import { addInbox, addLedger, formatMoney, type GameState, type WeekSummary, weekIndexOf } from './state';
+import { addInbox, addLedger, formatMoney, type GameState, sortedById, type WeekSummary, weekIndexOf } from './state';
 
 /**
  * Wochenschleife:
@@ -46,7 +46,7 @@ export function ensureCalendars(g: GameState): void {
 }
 
 export function racesOfWeek(g: GameState, weekIndex: number): RaceInstance[] {
-  return Object.values(g.races).filter((r) => r.weekIndex === weekIndex);
+  return sortedById(Object.values(g.races).filter((r) => r.weekIndex === weekIndex));
 }
 
 export function beginWeek(g: GameState): void {
@@ -147,7 +147,7 @@ export function seasonTurnover(g: GameState): void {
   const r = new Rng(g.seed).fork('turnover', g.season);
   const names = new NameRegistry(Object.values(g.horses).map((h) => h.name));
   let retired = 0;
-  for (const h of Object.values(g.horses)) {
+  for (const h of sortedById(Object.values(g.horses))) {
     if (h.status !== 'active') continue;
     const age = g.season - h.foalYear;
     const level = h.officialRating ?? 0;

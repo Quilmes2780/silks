@@ -105,7 +105,9 @@ describe('Befehle des Spielers', () => {
     advanceWeek(g);
     advanceWeek(g);
     expect(g.races[target.id]!.status === 'run' || g.races[target.id]!.status === 'void').toBe(true);
-    if (g.races[target.id]!.status === 'run') expect(horse.runIds.length).toBe(1);
+    // lief das Pferd (nicht wegen Überzeichnung ausgeschieden), hat es genau einen Start
+    const ran = g.races[target.id]!.runners?.some((x) => x.horseId === horse.id);
+    expect(horse.runIds.length).toBe(g.races[target.id]!.status === 'run' && ran ? 1 : 0);
   });
 
   it('Trainingsvorlagen setzen den Wochenplan', () => {

@@ -97,6 +97,14 @@ export function runsOfHorse(g: GameState, h: Horse): Run[] {
   return h.runIds.map((id) => g.runs[id]!).filter(Boolean);
 }
 
+/**
+ * Werte eines Datensatzes in fester Reihenfolge (nach ID). Wichtig für den Determinismus:
+ * Nach dem Laden aus IndexedDB unterscheidet sich die Einfügereihenfolge vom Original.
+ */
+export function sortedById<T extends { id: string }>(items: Iterable<T>): T[] {
+  return [...items].sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+}
+
 export function formatMoney(x: number): string {
   return `£${Math.round(x).toLocaleString('en-GB')}`;
 }

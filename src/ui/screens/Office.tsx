@@ -1,8 +1,42 @@
 import { useCommand, useQuery } from '../api';
-import { Bar, ClassPill, Fig, HorseLink, Loading, Money, RaceLink, SilksIcon } from '../components/common';
+import { Bar, ClassPill, Fig, HorseLink, Loading, Money, RaceLink, SilksIcon, Term } from '../components/common';
 import { navigate } from '../router';
 import type { OfficeExtras } from '../../engine/game/econQueries';
 import { Link } from '../components/common';
+import type { TutorialView } from '../../engine/game/tutorial';
+import type { Route } from '../router';
+
+/** Checkliste „Erste Schritte“ für neue Spieler. */
+function FirstSteps({ t, onDismiss }: { t: TutorialView; onDismiss: () => void }) {
+  const allDone = t.done === t.total;
+  return (
+    <div className="card first-steps">
+      <h3>
+        {allDone ? 'Erste Schritte geschafft' : 'Erste Schritte'}
+        <span className="small muted" style={{ fontWeight: 400 }}>{t.done} von {t.total}</span>
+        <span style={{ flex: 1 }} />
+        <a className="btn small" href="#/help">Hilfe &amp; Glossar</a>
+        <button className="btn small" onClick={onDismiss}>{allDone ? 'Schließen' : 'Ausblenden'}</button>
+      </h3>
+      <div className="progress"><span style={{ width: `${(100 * t.done) / t.total}%` }} /></div>
+      {allDone ? (
+        <p>Du kennst jetzt die wichtigsten Bereiche. Ziel jeder Saison: Preisgeld und Wertzuwachs sollen die Kosten decken – und vielleicht gewinnt einer deiner Pferde ein Gruppenrennen.</p>
+      ) : (
+        <ol>
+          {t.steps.map((s) => (
+            <li key={s.id} className={s.done ? 'done' : ''}>
+              <span className="chk">{s.done ? '✓' : ''}</span>
+              <span>
+                {s.done ? <span className="lbl">{s.label}</span> : <Link to={{ name: s.route } as Route}>{s.label}</Link>}
+                {!s.done && <span className="hint">{s.hint}</span>}
+              </span>
+            </li>
+          ))}
+        </ol>
+      )}
+    </div>
+  );
+}
 
 export function OfficeScreen() {
   const { data, error } = useQuery('office', undefined);
@@ -15,6 +49,7 @@ export function OfficeScreen() {
         <h1 style={{ marginBottom: 0 }}>Büro</h1>
         <span className="muted">{data.header.stable.name}</span>
       </div>
+      {!data.tutorial.dismissed && <FirstSteps t={data.tutorial} onDismiss={() => run('dismissTutorial', { dismissed: true })} />}
       <div className="grid side">
         <div className="card">
           <h3>
@@ -141,9 +176,9 @@ export function OfficeScreen() {
               <tr>
                 <th>Pferd</th>
                 <th>Form</th>
-                <th>Fitness</th>
-                <th>Frische</th>
-                <th className="num">OR</th>
+                <th><Term id="fitness">Fitness</Term></th>
+                <th><Term id="fitness">Frische</Term></th>
+                <th className="num"><Term id="or">OR</Term></th>
                 <th className="num">letzte SF</th>
               </tr>
             </thead>

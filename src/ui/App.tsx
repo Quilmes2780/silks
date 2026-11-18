@@ -17,6 +17,7 @@ import { FinanceScreen } from './screens/Finance';
 import { FacilitiesScreen } from './screens/Facilities';
 import { StudScreen } from './screens/Stud';
 import { BreedingScreen } from './screens/Breeding';
+import { HelpScreen } from './screens/Help';
 import type { WeekSummary } from '../engine/game/state';
 import type { RunLink } from '../engine/game/queries';
 
@@ -104,6 +105,8 @@ function Screen({ route }: { route: Route }) {
       return <StudScreen tab={route.tab} mareId={route.mareId} />;
     case 'breeding':
       return <BreedingScreen tab={route.tab} />;
+    case 'help':
+      return <HelpScreen />;
     default:
       return <OfficeScreen />;
   }
@@ -111,6 +114,11 @@ function Screen({ route }: { route: Route }) {
 
 function Sidebar({ route }: { route: Route }) {
   const { data: h } = useQuery('header', undefined);
+  // Erste Schritte: besuchte Bildschirme melden
+  const open = h?.tutorialOpen.includes(route.name) ?? false;
+  useEffect(() => {
+    if (open) call('markTutorial', { step: route.name }).then(() => invalidate(), () => undefined);
+  }, [open, route.name]);
   const item = (r: Route, label: string, extra?: React.ReactNode) => {
     const active =
       route.name === r.name || (r.name === 'stable' && route.name === 'horse') || (r.name === 'raceday' && route.name === 'race') || (r.name === 'market' && route.name === 'auction');
@@ -140,10 +148,11 @@ function Sidebar({ route }: { route: Route }) {
         {item({ name: 'finance' }, 'Finanzen')}
         {item({ name: 'facilities' }, 'Anlage')}
         <div className="sep" />
+        {item({ name: 'help' }, 'Hilfe & Glossar')}
         {item({ name: 'saves' }, 'Spielstände')}
       </nav>
       <div className="foot">
-        Phase 4 · Zucht und Generationen.
+        Phase 5 · Grafik und Feinschliff.
         <br />
         Zufall: {h ? Math.round(h.randomness * 100) : '–'} %
       </div>

@@ -1,7 +1,7 @@
 import { type ReactElement, useMemo, useState } from 'react';
 import { call, useCommand, useQuery } from '../api';
 import { Chart } from '../components/Chart';
-import { Bar, ClassPill, Fig, HorseLink, Lengths, Link, Loading, Money, PlaceholderTag, RaceLink, RunLinkValue, SilksIcon, Time } from '../components/common';
+import { Bar, ClassPill, Fig, HorseLink, Lengths, Link, Loading, Money, PlaceholderTag, RaceLink, RunLinkValue, SilksIcon, Time, Term } from '../components/common';
 import { HorsePortrait } from '../components/Portrait';
 import { navigate } from '../router';
 import type { CareerRow, ConditionRow, HorseProfileView, RunLink } from '../../engine/game/queries';
@@ -253,15 +253,15 @@ export function CareerTable({ rows, title = 'Karriere' }: { rows: CareerRow[]; t
                 <th>Rennen</th>
                 <th>Klasse</th>
                 <th>Distanz</th>
-                <th>Boden</th>
+                <th><Term id="going">Boden</Term></th>
                 <th className="num">Platz</th>
                 <th className="num">Abstand</th>
                 <th className="num">Zeit</th>
                 <th className="num">Gewicht</th>
                 <th className="num">Box</th>
                 <th>Jockey</th>
-                <th className="num">OR</th>
-                <th className="num">SF</th>
+                <th className="num"><Term id="or">OR</Term></th>
+                <th className="num"><Term id="sf">SF</Term></th>
                 <th className="num">FS %</th>
                 <th className="num">Preisgeld</th>
                 <th>Notizen</th>

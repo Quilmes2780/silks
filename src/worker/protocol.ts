@@ -69,6 +69,8 @@ export interface Api {
   setRaceOrders: { req: { raceId: string; horseId: string; tactic: Tactic; jockeyId?: string | null }; res: null };
   setTraining: { req: { horseId: string; plan: TrainingPlan | string }; res: null };
   markInboxRead: { req: { ids: string[] | 'all' }; res: null };
+  markTutorial: { req: { step: string }; res: null };
+  dismissTutorial: { req: { dismissed: boolean }; res: null };
   renameStable: { req: { name: string }; res: null };
   setSilks: { req: { silks: Silks }; res: null };
   // Personal

@@ -17,7 +17,8 @@ export type Route =
   | { name: 'finance' }
   | { name: 'facilities' }
   | { name: 'stud'; tab?: string; mareId?: string }
-  | { name: 'breeding'; tab?: string };
+  | { name: 'breeding'; tab?: string }
+  | { name: 'help' };
 
 export function parseRoute(hash: string): Route {
   const parts = hash.replace(/^#\/?/, '').split('/').map(decodeURIComponent);
@@ -50,6 +51,8 @@ export function parseRoute(hash: string): Route {
       return { name: 'stud', tab: parts[1] || undefined, mareId: parts[2] || undefined };
     case 'breeding':
       return { name: 'breeding', tab: parts[1] || undefined };
+    case 'help':
+      return { name: 'help' };
     default:
       return { name: 'saves' };
   }

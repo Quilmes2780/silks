@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { toast, useCommand, useQuery } from '../api';
-import { Bar, HorseLink, Link, Loading, Modal, Money, Stars, useSort } from '../components/common';
+import { Bar, HorseLink, Link, Loading, Modal, Money, Stars, useSort, Term } from '../components/common';
 import { navigate } from '../router';
 import type { MareRow, StallionRow, StudView } from '../../engine/breeding/queries';
 
@@ -261,7 +261,7 @@ function Register({ mareId, onPick }: { mareId: string | null; onPick: ((s: Stal
               <th title="mittlere Siegdistanz und Bodenneigung der Nachkommen">Tendenz</th>
               {th('load', 'Buch', 'num')}
               {mareId && th('expected', 'Prognose', 'num')}
-              {mareId && <th>Nick</th>}
+              {mareId && <th><Term id="nick">Nick</Term></th>}
               {mareId && th('coi', 'Inzucht', 'num')}
               {onPick && <th></th>}
             </tr>
@@ -414,7 +414,7 @@ function OwnStallions({ data }: { data: StudView }) {
             <th>Hengst</th>
             <th className="num">Alter</th>
             <th>Linie</th>
-            <th className="num">Decktaxe</th>
+            <th className="num"><Term id="fee">Decktaxe</Term></th>
             <th className="num">Buch</th>
             <th className="num">Nachkommen</th>
             <th className="num">Sieger</th>

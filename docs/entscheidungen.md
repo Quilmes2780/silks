@@ -207,3 +207,24 @@ Freigegeben wurde der Plan mit acht Punkten: Genetik, Hengste als Pferde, Gestü
 ### Migration
 
 - Version-2-Stände: Die Hengste des alten Registers werden Pferde mit denselben IDs (Abstammungen bleiben gültig). Ihre Qualität wird um 9 Punkte auf die neue Skala gehoben, Decktaxen werden neu aus der (erfundenen) Rennleistung berechnet. KI-Ställe und Züchter erhalten Stutenherden, nach der Decksaison mit Trächtigkeiten. Hengstnamen mit weiblichen Titeln werden ersetzt.
+
+## Phase 5: Grafik und Feinschliff (freigegeben am 18.11.2026)
+
+Ziel laut Konzept: Ein Außenstehender kann ohne Erklärung spielen. Videos entfallen (MVP), der Zufallsregler bleibt beim Standard „ausgewogen“ (40 %).
+
+### Spielstände
+
+- **Speicherform**: Starts, Rennen und Pferde werden in IndexedDB und im Export verdichtet (`engine/game/archive.ts`). Felder, die sich aus Rennen und Ausschreibung ergeben (Rennname, Bahn, Distanz, Klasse, Datum, Boden, Feldgröße), entfallen; feste Felder eines Starts stehen als Werteliste, Sectionals als Zahlenreihe, Taktiken als Zeichenkette. Die Kennzahlen eines Pferds (`stats`) werden beim Laden aus seinen Starts neu berechnet. Im Speicher bleibt alles in voller Form; ältere Stände ohne Verdichtung werden unverändert gelesen.
+- **Archiv**: Sectionals, Tempokurven und Rennereignisse der Konkurrenz nur noch für die laufende Saison (vorher zwei). Replays und Nennlisten: Rennen mit eigenen Startern zwei Saisons, sonst eine.
+- **Export** als gzip (`.json.gz`); der Import liest gzip und reines JSON.
+- **Ergebnis** (`npx tsx scripts/save-size.ts 4`, Seed 7, 20 KI-Ställe): Der gespeicherte Stand wächst um ~4,8 MB je Saison statt ~14 MB, die Exportdatei um ~1 MB (nach 4 Saisons 21,9 MB JSON, 4,0 MB gzip). Im Arbeitsspeicher des Workers liegen weiterhin ~15 MB je Saison.
+
+### Einstieg
+
+- **Erste Schritte**: Checkliste im Büro mit sieben Schritten (Stall, Pferdeprofil, Nennung, Woche abschließen, Rennergebnis, Personal, Finanzen). Besuche meldet die Oberfläche, Nennung und Woche ergeben sich aus dem Spielstand. Ausblendbar; ältere Spielstände, die schon über Woche 4 hinaus sind, bekommen sie nicht.
+- **Hilfe & Glossar**: neuer Menüpunkt mit Wochenablauf und 22 Fachbegriffen; dieselben Erklärungen erscheinen als Tooltip an Spaltenköpfen (OR, SF, Boden, Fitness, Frische, Decktaxe, Nick).
+- **Spielstart**: kurzer Einführungstext, drei Voreinstellungen für den Zufall (berechenbar 15 %, ausgewogen 40 %, wie im echten Leben 80 %) plus Regler; KI-Ställe und Seed unter „Erweitert“.
+
+### Grafik (Higgsfield)
+
+- **Stiltest** (18.11.2026): 12 Bilder für 15 Credits. Nano Banana 2.1 kostet 1,5 Credits je Bild (1k), GPT Image 2.6 in mittlerer Qualität 0,5 Credits. Beide treffen den Ölbild- und Plakatstil; Auswahl durch den Spieler steht aus.

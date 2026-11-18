@@ -1,4 +1,5 @@
 import { createGame } from '../engine/game/newGame';
+import * as tutorial from '../engine/game/tutorial';
 import { advanceWeek } from '../engine/game/week';
 import * as cmd from '../engine/game/commands';
 import * as staffCmd from '../engine/game/staffCommands';
@@ -158,6 +159,8 @@ export class GameService {
     setRaceOrders: (p) => this.run((g) => (cmd.setRaceOrders(g, p.raceId, p.horseId, p.tactic, p.jockeyId), null), { races: [p.raceId] }),
     setTraining: (p) => this.run((g) => (cmd.setTraining(g, p.horseId, p.plan), null), { horses: [p.horseId] }),
     markInboxRead: (p) => this.run((g) => (cmd.markInboxRead(g, p.ids), null)),
+    markTutorial: (p) => this.run((g) => (tutorial.markTutorial(g, p.step), null)),
+    dismissTutorial: (p) => this.run((g) => (tutorial.setTutorialDismissed(g, p.dismissed), null)),
     renameStable: (p) => this.run((g) => (cmd.renameStable(g, p.name), null)),
     setSilks: (p) => this.run((g) => ((g.stables[g.playerStableId]!.silks = p.silks), null)),
 

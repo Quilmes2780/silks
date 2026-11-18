@@ -1,5 +1,5 @@
 import { toast, useCommand, useQuery } from '../api';
-import { HorseLink, Loading, Money } from '../components/common';
+import { HorseLink, Loading, Money, Term } from '../components/common';
 
 /** Markt → Teilhaberschaften: Anteile an Hengsten und Rennpferden der KI-Ställe. */
 export function Shares() {
@@ -25,7 +25,7 @@ export function Shares() {
                 <th>Besitzer</th>
                 <th className="num">Anteil</th>
                 <th className="num">Rating</th>
-                <th className="num">Decktaxe</th>
+                <th className="num"><Term id="fee">Decktaxe</Term></th>
                 <th className="num">Wert des Anteils</th>
                 <th></th>
               </tr>
@@ -71,7 +71,7 @@ export function Shares() {
                 <th>Pferd</th>
                 <th>Besitzer</th>
                 <th className="num">Rating</th>
-                <th className="num">Decktaxe</th>
+                <th className="num"><Term id="fee">Decktaxe</Term></th>
                 <th className="num">Marktwert</th>
                 <th className="num">frei</th>
                 <th>Kaufen</th>

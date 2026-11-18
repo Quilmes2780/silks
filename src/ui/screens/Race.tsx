@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useCommand, useQuery } from '../api';
 import { Chart, CHART_COLORS } from '../components/Chart';
-import { ClassPill, Fig, HorseLink, Lengths, Link, Loading, Money, SilksIcon, Time } from '../components/common';
+import { ClassPill, Fig, HorseLink, Lengths, Link, Loading, Money, SilksIcon, Time, Term } from '../components/common';
 import { RaceView } from '../components/RaceView';
 import type { CardRunner, RaceCardView, ResultRow } from '../../engine/game/queries';
 import type { Tactic } from '../../engine/types';
@@ -83,7 +83,7 @@ function Card({ r }: { r: RaceCardView }) {
               <th className="num">Alter</th>
               <th className="num">Gewicht</th>
               <th>Jockey</th>
-              <th className="num">OR</th>
+              <th className="num"><Term id="or">OR</Term></th>
               <th>Form</th>
               <th>letzte Speed Figures</th>
               <th className="num">beste</th>
@@ -219,7 +219,7 @@ function Result({ r }: { r: RaceCardView }) {
             <th className="num">Box</th>
             <th className="num">Gewicht</th>
             <th>Jockey</th>
-            <th className="num">SF</th>
+            <th className="num"><Term id="sf">SF</Term></th>
             <th className="num">FS %</th>
             <th className="num">Spitze</th>
             <th className="num">Meter</th>

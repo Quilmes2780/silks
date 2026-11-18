@@ -1,4 +1,5 @@
 import { raceRecordLevel } from '../breeding/stud';
+import { openVisitSteps, tutorialView, type TutorialView } from './tutorial';
 import { sharesOffered } from '../market/partnership';
 import type {
   AttrKey,
@@ -64,6 +65,8 @@ export interface HeaderView {
   staffAlerts: number;
   /** Gestüt: Stuten ohne Deckplan (Dez.–Feb.), Zweijährige ohne Box */
   studAlerts: number;
+  /** Erste Schritte: noch nicht besuchte Bildschirme */
+  tutorialOpen: string[];
 }
 
 function stableRef(g: GameState, id: string): StableRef {
@@ -96,6 +99,7 @@ export function headerView(g: GameState): HeaderView {
       (x) => x.contract?.stableId === g.playerStableId && (x.leaving !== null || (g.week >= 44 && x.contract.endSeason <= g.season)),
     ).length,
     studAlerts: studAlerts(g),
+    tutorialOpen: openVisitSteps(g),
   };
 }
 
@@ -148,6 +152,7 @@ export interface OfficeView {
   lastSummary: WeekSummary | null;
   leaders: Array<{ stable: StableRef; wins: number; prize: number }>;
   extras: OfficeExtras;
+  tutorial: TutorialView;
 }
 
 export function upcomingEntries(g: GameState, horseId?: string): UpcomingEntry[] {
@@ -223,6 +228,7 @@ export function officeView(g: GameState): OfficeView {
     lastSummary: g.lastSummary,
     leaders,
     extras: officeExtras(g),
+    tutorial: tutorialView(g),
   };
 }
 

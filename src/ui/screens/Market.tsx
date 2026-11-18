@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { toast, useCommand, useQuery } from '../api';
-import { Fig, HorseLink, Link, Loading, Modal, Money, RaceLink, SilksIcon } from '../components/common';
+import { Fig, HorseLink, Link, Loading, Modal, Money, RaceLink, SilksIcon, Term } from '../components/common';
 import { MoneyInput } from '../components/Contract';
 import type { HorseMarketRow, MarketView, OfferRow } from '../../engine/game/econQueries';
 import { Boarding, Shares } from './Partnerships';
@@ -126,7 +126,7 @@ export function MarketTable({ rows, action }: { rows: HorseMarketRow[]; action?:
         <tr>
           <th>Pferd</th>
           <th>Stall</th>
-          <th className="num">OR</th>
+          <th className="num"><Term id="or">OR</Term></th>
           <th className="num">Starts</th>
           <th className="num">Siege</th>
           <th className="num">beste SF</th>
@@ -373,7 +373,7 @@ function Sell({ data }: { data: MarketData }) {
         <thead>
           <tr>
             <th>Pferd</th>
-            <th className="num">OR</th>
+            <th className="num"><Term id="or">OR</Term></th>
             <th className="num">Starts</th>
             <th className="num">beste SF</th>
             <th className="num">Marktwert</th>

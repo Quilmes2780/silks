@@ -5,6 +5,7 @@ import { call, useToasts } from '../api';
 import { href, type Route } from '../router';
 import type { RunLink } from '../../engine/game/queries';
 import { lengthsLabel, money, raceTime } from '../../engine/game/format';
+import { GLOSSARY } from '../glossary';
 
 export function SilksIcon({ silks, size = 28, title }: { silks: Silks | null; size?: number; title?: string }) {
   const svg = useMemo(() => renderSilksSvg(silks, { size, title }), [silks, size, title]);
@@ -200,4 +201,15 @@ export function shortMoney(v: number): string {
   const a = Math.abs(v);
   const s = a >= 1e6 ? `£${(a / 1e6).toFixed(a >= 1e7 ? 0 : 1)}m` : a >= 1e4 ? `£${Math.round(a / 1000)}k` : money(a);
   return v < 0 ? `−${s}` : s;
+}
+
+/** Fachbegriff mit Erklärung als Tooltip (Glossar in src/ui/glossary.ts). */
+export function Term({ id, children }: { id: keyof typeof GLOSSARY; children?: ReactNode }) {
+  const e = GLOSSARY[id];
+  if (!e) return <>{children}</>;
+  return (
+    <abbr className="term" title={`${e.term}: ${e.short}`}>
+      {children ?? e.term}
+    </abbr>
+  );
 }

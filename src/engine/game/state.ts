@@ -1,3 +1,4 @@
+import type { TutorialState } from './tutorial';
 import type {
   Auction,
   BreedingState,
@@ -110,6 +111,8 @@ export interface GameState {
   counters: { horse: number; run: number; msg: number; staff: number; offer: number; lot: number };
   calendarSeasons: number[];
   lastSummary: WeekSummary | null;
+  /** Checkliste „Erste Schritte“ (fehlt in älteren Spielständen) */
+  tutorial?: TutorialState;
   /** Pferde, die seit dem letzten Speichern Besitzer oder Status gewechselt haben (für die Persistenz) */
   touchedHorses: string[];
   /** Rennen, die außerhalb der Wochenschleife geändert wurden (Nennungen gestrichen) */

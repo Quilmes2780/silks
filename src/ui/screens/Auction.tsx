@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { toast, useCommand, useQuery } from '../api';
-import { HorseLink, Link, Loading, Money, shortMoney, SilksIcon } from '../components/common';
+import { HorseLink, Link, Loading, Money, shortMoney, SilksIcon, Term } from '../components/common';
 import { MoneyInput } from '../components/Contract';
 import type { AuctionView, LotRow } from '../../engine/game/econQueries';
 
@@ -58,7 +58,7 @@ export function AuctionScreen({ id }: { id: string }) {
                 <th>Abstammung</th>
                 <th>Exterieur</th>
                 {data.kind === 'breeze_up' && <th className="num">Breeze 2f</th>}
-                {(data.kind === 'horses_in_training' || data.kind === 'broodmare') && <th className="num">OR</th>}
+                {(data.kind === 'horses_in_training' || data.kind === 'broodmare') && <th className="num"><Term id="or">OR</Term></th>}
                 <th>Gutachten</th>
                 <th className="num">Katalogwert</th>
                 <th className="num">Stand</th>

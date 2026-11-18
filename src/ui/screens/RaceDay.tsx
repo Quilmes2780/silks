@@ -1,5 +1,5 @@
 import { useQuery } from '../api';
-import { ClassPill, Loading, Money, RaceLink } from '../components/common';
+import { ClassPill, Loading, Money, RaceLink, Term } from '../components/common';
 import type { CalendarRow } from '../../engine/game/queries';
 
 export function RaceDayScreen() {
@@ -38,7 +38,7 @@ function RaceList({ rows, result }: { rows: CalendarRow[]; result?: boolean }) {
           <th>Bahn</th>
           <th>Rennen</th>
           <th>Distanz</th>
-          <th>Boden</th>
+          <th><Term id="going">Boden</Term></th>
           <th className="num">Preisgeld</th>
           <th className="num">Starter</th>
           <th>Deine Pferde</th>

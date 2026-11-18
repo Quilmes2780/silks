@@ -1,5 +1,5 @@
 import { useQuery } from '../api';
-import { HorseLink, Link, Loading, Money, useSort } from '../components/common';
+import { HorseLink, Link, Loading, Money, useSort, Term } from '../components/common';
 import type { BreedingStatsView } from '../../engine/breeding/queries';
 
 const TABS: Array<[string, string]> = [
@@ -58,7 +58,7 @@ function Sires({ data }: { data: BreedingStatsView }) {
             {th('best', 'bestes', 'num')}
             {th('bt', 'Black Type', 'num')}
             {th('dist', 'Ø Siegdistanz', 'num')}
-            <th>Boden</th>
+            <th><Term id="going">Boden</Term></th>
           </tr>
         </thead>
         <tbody>

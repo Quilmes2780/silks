@@ -60,6 +60,13 @@ export function SilksEditor({ silks, onChange }: { silks: Silks; onChange: (s: S
   );
 }
 
+/** Liest einen exportierten Spielstand – gzip-komprimiert (.json.gz) oder als reines JSON. */
+async function readSaveFile(f: File): Promise<string> {
+  const head = new Uint8Array(await f.slice(0, 2).arrayBuffer());
+  if (head[0] === 0x1f && head[1] === 0x8b) return new Response(f.stream().pipeThrough(new DecompressionStream('gzip'))).text();
+  return f.text();
+}
+
 export function SavesScreen({ onLoaded, hasGame }: { onLoaded: (id: string) => void; hasGame: boolean }) {
   const { data: saves } = useQuery('listSaves', undefined);
   const [creating, setCreating] = useState(false);
@@ -79,13 +86,15 @@ export function SavesScreen({ onLoaded, hasGame }: { onLoaded: (id: string) => v
   };
   const exportSave = async (s: SaveMeta) => {
     const { fileName, json } = await call('exportSave', { saveId: s.id });
-    const url = URL.createObjectURL(new Blob([json], { type: 'application/json' }));
+    // gzip-komprimiert: Spielstände schrumpfen auf etwa ein Fünftel
+    const gz = await new Response(new Blob([json]).stream().pipeThrough(new CompressionStream('gzip'))).blob();
+    const url = URL.createObjectURL(new Blob([gz], { type: 'application/gzip' }));
     const a = document.createElement('a');
     a.href = url;
-    a.download = fileName;
+    a.download = `${fileName}.gz`;
     a.click();
     URL.revokeObjectURL(url);
-    toast(`Exportiert: ${fileName}`, 'success');
+    toast(`Exportiert: ${fileName}.gz`, 'success');
   };
   const del = async (s: SaveMeta) => {
     if (!confirm(`Spielstand „${s.name}“ endgültig löschen? Das kann nicht rückgängig gemacht werden.`)) return;
@@ -96,7 +105,7 @@ export function SavesScreen({ onLoaded, hasGame }: { onLoaded: (id: string) => v
   const importFile = async (f: File) => {
     setBusy(true);
     try {
-      const meta = await call('importSave', { json: await f.text() });
+      const meta = await call('importSave', { json: await readSaveFile(f) });
       toast(`Importiert: ${meta.name}`, 'success');
       onLoaded(meta.id);
     } catch (e) {
@@ -152,8 +161,8 @@ export function SavesScreen({ onLoaded, hasGame }: { onLoaded: (id: string) => v
         <div className="card col" style={{ gap: 10 }}>
           <h3>Los geht’s</h3>
           <button className="btn primary" onClick={() => setCreating(true)}>Neues Spiel …</button>
-          <button className="btn" onClick={() => fileRef.current?.click()} disabled={busy}>Spielstand importieren (JSON) …</button>
-          <input ref={fileRef} type="file" accept="application/json,.json" style={{ display: 'none' }} onChange={(e) => e.target.files?.[0] && importFile(e.target.files[0])} />
+          <button className="btn" onClick={() => fileRef.current?.click()} disabled={busy}>Spielstand importieren …</button>
+          <input ref={fileRef} type="file" accept="application/json,application/gzip,.json,.gz" style={{ display: 'none' }} onChange={(e) => e.target.files?.[0] && importFile(e.target.files[0])} />
           {hasGame && (
             <a className="btn" href="#/office">Zurück zum Spiel</a>
           )}
@@ -176,6 +185,7 @@ function NewGameDialog({ onClose, onCreated }: { onClose: () => void; onCreated:
   const [aiStables, setAiStables] = useState(20);
   const [seed, setSeed] = useState(randomSeed);
   const [busy, setBusy] = useState(false);
+  const [advanced, setAdvanced] = useState(false);
 
   const create = async () => {
     setBusy(true);
@@ -192,6 +202,10 @@ function NewGameDialog({ onClose, onCreated }: { onClose: () => void; onCreated:
   return (
     <Modal onClose={onClose}>
       <h2>Neues Spiel</h2>
+      <p className="muted" style={{ marginTop: -4 }}>
+        Du übernimmst einen kleinen Flachrennstall in England mit ein paar mittelmäßigen Pferden und etwas Startkapital. Trainiere, nenne für Rennen,
+        stelle Personal ein und züchte später deine eigenen Champions. Die Woche spielst du mit „Woche abschließen“ ab.
+      </p>
       <div className="grid two" style={{ marginBottom: 14 }}>
         <div className="field">
           <label>Name des Spielstands</label>
@@ -208,16 +222,35 @@ function NewGameDialog({ onClose, onCreated }: { onClose: () => void; onCreated:
       <div className="grid two">
         <div className="field">
           <label>
-            Zufallsanteil der Rennen: <b>{Math.round(randomness * 100)} %</b> – {rLabel}
+            Wie berechenbar sollen Rennen sein? <b>{Math.round(randomness * 100)} %</b> Zufall – {rLabel}
           </label>
+          <div className="row" style={{ gap: 6, marginBottom: 6 }}>
+            {(
+              [
+                [0.15, 'Berechenbar'],
+                [0.4, 'Ausgewogen'],
+                [0.8, 'Wie im echten Leben'],
+              ] as const
+            ).map(([v, l]) => (
+              <button key={v} type="button" className={`chip ${Math.abs(randomness - v) < 0.01 ? 'on' : ''}`} onClick={() => setRandomness(v)}>
+                {l}
+              </button>
+            ))}
+          </div>
           <input type="range" min={0} max={1} step={0.05} value={randomness} onChange={(e) => setRandomness(Number(e.target.value))} />
-          <span className="small muted">Skaliert Tagesform und Rennzwischenfälle. Standard 40 %.</span>
+          <span className="small muted">Bestimmt, wie stark Tagesform und Rennzwischenfälle mitspielen. Empfohlen: Ausgewogen (40 %).</span>
         </div>
         <div className="field">
           <label>Startpferde: <b>{horses}</b></label>
           <input type="range" min={2} max={10} step={1} value={horses} onChange={(e) => setHorses(Number(e.target.value))} />
           <span className="small muted">Mittelmäßige Pferde, zwei bis vier Jahre alt.</span>
         </div>
+      </div>
+      <button type="button" className="btn small" style={{ marginTop: 10 }} onClick={() => setAdvanced(!advanced)}>
+        {advanced ? '▾' : '▸'} Erweitert
+      </button>
+      {advanced && (
+      <div className="grid two" style={{ marginTop: 10 }}>
         <div className="field">
           <label>KI-Ställe: <b>{aiStables}</b></label>
           <input type="range" min={10} max={40} step={1} value={aiStables} onChange={(e) => setAiStables(Number(e.target.value))} />
@@ -230,6 +263,7 @@ function NewGameDialog({ onClose, onCreated }: { onClose: () => void; onCreated:
           </div>
         </div>
       </div>
+      )}
       <div className="row" style={{ justifyContent: 'flex-end', marginTop: 18 }}>
         <button className="btn" onClick={onClose}>Abbrechen</button>
         <button className="btn primary" onClick={create} disabled={busy || !stableName.trim()}>

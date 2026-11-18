@@ -3,6 +3,7 @@ import type { GameState } from '../engine/game/state';
 import type { Horse, RaceInstance, RaceTemplate, Run } from '../engine/types';
 import type { SaveMeta } from './protocol';
 import { migrateGame, SAVE_VERSION } from '../engine/game/migrate';
+import { packAll, packHorse, packRace, packRun, unpackAll } from '../engine/game/archive';
 
 /**
  * Persistenz in IndexedDB über Dexie. Mehrere Spielstände; große Sammlungen (Pferde, Starts,
@@ -20,9 +21,10 @@ type Core = Omit<GameState, 'horses' | 'runs' | 'races' | 'templates' | 'touched
 class SilksDb extends Dexie {
   saves!: Table<SaveMeta, string>;
   cores!: Table<{ id: string; data: Core }, string>;
-  horses!: Table<Row<Horse>, [string, string]>;
-  runs!: Table<Row<Run>, [string, string]>;
-  races!: Table<Row<RaceInstance>, [string, string]>;
+  horses!: Table<Row<unknown>, [string, string]>;
+  /** Starts und Rennen liegen in verdichteter Form (siehe engine/game/archive.ts) */
+  runs!: Table<Row<unknown>, [string, string]>;
+  races!: Table<Row<unknown>, [string, string]>;
   templates!: Table<Row<RaceTemplate>, [string, string]>;
 
   constructor(name = 'silks-and-stamina') {
@@ -74,19 +76,19 @@ export class SaveStore {
 
   async save(g: GameState, scope: SaveScope, now: string): Promise<SaveMeta> {
     const meta = metaOf(g, now);
-    const pick = <T extends { id: string }>(all: Record<string, T>, sel: string[] | 'all' | undefined): Row<T>[] => {
+    const pick = <T extends { id: string }, U = T>(all: Record<string, T>, sel: string[] | 'all' | undefined, pack?: (x: T) => U): Row<T | U>[] => {
       if (!sel) return [];
       const items = sel === 'all' ? Object.values(all) : sel.map((id) => all[id]).filter((x): x is T => !!x);
-      return items.map((data) => ({ saveId: g.id, id: data.id, data }));
+      return items.map((data) => ({ saveId: g.id, id: data.id, data: pack ? pack(data) : data }));
     };
     await this.db.transaction('rw', [this.db.saves, this.db.cores, this.db.horses, this.db.runs, this.db.races, this.db.templates], async () => {
       await this.db.saves.put(meta);
       await this.db.cores.put({ id: g.id, data: coreOf(g) });
-      const h = pick(g.horses, scope.horses);
+      const h = pick(g.horses, scope.horses, (x: Horse) => packHorse(x, g.runs));
       if (h.length) await this.db.horses.bulkPut(h);
-      const r = pick(g.runs, scope.runs);
+      const r = pick(g.runs, scope.runs, (x: Run) => packRun(x, g));
       if (r.length) await this.db.runs.bulkPut(r);
-      const ra = pick(g.races, scope.races);
+      const ra = pick(g.races, scope.races, (x: RaceInstance) => packRace(x));
       if (ra.length) await this.db.races.bulkPut(ra);
       const t = pick(g.templates, scope.templates);
       if (t.length) await this.db.templates.bulkPut(t);
@@ -108,7 +110,9 @@ export class SaveStore {
       this.db.races.where('saveId').equals(id).toArray(),
       this.db.templates.where('saveId').equals(id).toArray(),
     ]);
-    const g = { ...core.data, horses: toMap(horses), runs: toMap(runs), races: toMap(races), templates: toMap(templates), touchedHorses: [], touchedRaces: [] } as GameState;
+    const raw = { horses: toMap(horses), runs: toMap(runs), races: toMap(races), templates: toMap(templates) as Record<string, RaceTemplate> };
+    unpackAll(raw);
+    const g = { ...core.data, ...raw, touchedHorses: [], touchedRaces: [] } as GameState;
     return g;
   }
 
@@ -134,7 +138,7 @@ export function exportJson(g: GameState, now: string): string {
   const { touchedHorses: _t, touchedRaces: _tr, ...rest } = g;
   void _t;
   void _tr;
-  return JSON.stringify({ format: EXPORT_FORMAT, version: SAVE_VERSION, exportedAt: now, game: rest });
+  return JSON.stringify({ format: EXPORT_FORMAT, version: SAVE_VERSION, exportedAt: now, game: { ...rest, ...packAll(g) } });
 }
 
 export function parseImport(json: string): GameState {
@@ -154,6 +158,7 @@ export function parseImport(json: string): GameState {
   for (const key of required) {
     if (typeof raw[key] !== 'object' || raw[key] === null) throw new Error(`Spielstand unvollständig: ${key} fehlt.`);
   }
+  unpackAll(raw as unknown as Parameters<typeof unpackAll>[0]);
   migrateGame(raw);
   const g = raw as unknown as GameState;
   g.touchedHorses = [];

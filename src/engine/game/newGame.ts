@@ -1,4 +1,5 @@
 import { Rng } from '../rng';
+import { newTutorial } from './tutorial';
 import { generateHorse, generateColour, generateMarkings } from '../horse/generate';
 import { ageAt, ceilingAttributes, PEAK_AGE } from '../horse/maturity';
 import type { Attributes, Facilities, Horse, Silks, SilksPattern, Stable, Staff } from '../types';
@@ -127,6 +128,7 @@ export function createGame(o: NewGameOptions): GameState {
     counters: { horse: 0, run: 0, msg: 0, staff: 0, offer: 0, lot: 0 },
     calendarSeasons: [],
     lastSummary: null,
+    tutorial: newTutorial(0),
     touchedHorses: [],
     touchedRaces: [],
   };
@@ -343,6 +345,7 @@ export function createGame(o: NewGameOptions): GameState {
       'Zwei Pferde haben noch keinen Pfleger – unter „Personal“ kannst du weitere Leute einstellen. ' +
       'Gehälter und Unterhalt kosten jede Woche Geld; Einnahmen kommen aus Preisgeld und Verkäufen (Markt).',
   });
+  g.tutorial = newTutorial(g.weekIndex);
   return g;
 }
 

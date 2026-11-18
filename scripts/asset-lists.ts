@@ -76,7 +76,7 @@ for (const c of COATS)
         tool: 'Bildgenerierung mit Referenzbildern',
         notes: 'Ohne Abzeichen generieren; Abzeichen kommen als Ebenen darüber.',
       });
-      manifestHorses.push({ coat: c.key, pose: p.key, age: a.key, file: null, promptId: id });
+      manifestHorses.push({ coat: c.key, pose: p.key, age: a.key, file: `assets/horses/${c.key}_${p.key}_${a.key}.webp`, promptId: id });
     }
 
 // 3. Abzeichen-Ebenen und Jockey mit Graustufen-Silks (8)

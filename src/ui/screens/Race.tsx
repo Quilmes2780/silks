@@ -3,6 +3,8 @@ import { useCommand, useQuery } from '../api';
 import { Chart, CHART_COLORS } from '../components/Chart';
 import { ClassPill, Fig, HorseLink, Lengths, Link, Loading, Money, SilksIcon, Time, Term } from '../components/common';
 import { RaceView } from '../components/RaceView';
+import { Banner } from '../components/Portrait';
+import { classicPoster, courseImage } from '../assets';
 import type { CardRunner, RaceCardView, ResultRow } from '../../engine/game/queries';
 import type { Tactic } from '../../engine/types';
 import { ATTACK_LABEL, EVENT_LABEL, lengthsLabel, PATH_LABEL, RUNSTYLE_LABEL, raceTime } from '../../engine/game/format';
@@ -23,6 +25,7 @@ export function RaceScreen({ id, tab }: { id: string; tab?: string }) {
     : [['card', 'Startliste']];
   return (
     <div className="col" style={{ gap: 14 }}>
+      <Banner src={classicPoster(r.name) ?? courseImage(r.trackId, r.surface)} height={170} position={classicPoster(r.name) ? 'center 35%' : 'center 60%'} />
       <div>
         <h1 style={{ marginBottom: 2 }}>
           {r.name} <ClassPill c={r.raceClass} />

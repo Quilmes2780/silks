@@ -5,6 +5,8 @@ import type { OfficeExtras } from '../../engine/game/econQueries';
 import { Link } from '../components/common';
 import type { TutorialView } from '../../engine/game/tutorial';
 import type { Route } from '../router';
+import { Banner } from '../components/Portrait';
+import { sceneImage } from '../assets';
 
 /** Checkliste „Erste Schritte“ für neue Spieler. */
 function FirstSteps({ t, onDismiss }: { t: TutorialView; onDismiss: () => void }) {
@@ -45,6 +47,7 @@ export function OfficeScreen() {
   const unread = data.inbox.filter((m) => !m.read).length;
   return (
     <div className="col" style={{ gap: 16 }}>
+      <Banner src={sceneImage('ui_office')} height={120} position="center 45%" />
       <div className="row">
         <h1 style={{ marginBottom: 0 }}>Büro</h1>
         <span className="muted">{data.header.stable.name}</span>

@@ -1,6 +1,8 @@
 import { useRef, useState } from 'react';
 import { call, invalidate, toast, useQuery } from '../api';
 import { Modal, SilksIcon } from '../components/common';
+import { Banner } from '../components/Portrait';
+import { courseImage } from '../assets';
 import type { Silks, SilksPattern } from '../../engine/types';
 import type { SaveMeta } from '../../worker/protocol';
 import { weekLabel } from '../../engine/game/format';
@@ -117,6 +119,7 @@ export function SavesScreen({ onLoaded, hasGame }: { onLoaded: (id: string) => v
 
   return (
     <div className="welcome">
+      <Banner src={courseImage('', 'turf')} height={230} position="center 70%" />
       <div className="title">Silks &amp; Stamina</div>
       <div className="subtitle">Ein Rennstall-Manager nach britischem Vorbild</div>
       <div className="grid side">

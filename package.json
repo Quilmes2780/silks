@@ -15,7 +15,8 @@
     "calibrate": "tsx scripts/calibrate.ts",
     "assets:lists": "tsx scripts/asset-lists.ts",
     "calibrate:economy": "tsx scripts/calibrate-economy.ts",
-    "simulate:generations": "tsx scripts/simulate-generations.ts"
+    "simulate:generations": "tsx scripts/simulate-generations.ts",
+    "assets:fetch": "node scripts/fetch-assets.mjs"
   },
   "dependencies": {
     "ajv": "^8.20.0",

@@ -227,7 +227,17 @@ Ziel laut Konzept: Ein Außenstehender kann ohne Erklärung spielen. Videos entf
 
 ### Grafik (Higgsfield)
 
-- **Stiltest** (18.11.2026): 12 Bilder für 15 Credits. Nano Banana 2.1 kostet 1,5 Credits je Bild (1k), GPT Image 2.6 in mittlerer Qualität 0,5 Credits. Beide treffen den Ölbild- und Plakatstil; Auswahl durch den Spieler steht aus.
+- **Stiltest** (18.11.2026): 12 Bilder für 15 Credits. Nano Banana 2.1 kostet 1,5 Credits je Bild (1k), GPT Image 2.6 in mittlerer Qualität 0,5 Credits. Beide treffen Ölbild- und Plakatstil; GPT Image hält die Fellfarbe genauer ein und malt keinen Rahmen und wurde für alle weiteren Bilder genommen (Spieler: „sehen top aus“, keine eigene Wahl).
+- **Bibliothek**: 67 Bilder, alle GPT Image 2.6 (mittel, 1024 px), als WebP direkt von Higgsfield (~85 KB je Bild, 4,8 MB zusammen) unter `public/assets`. Quelle und Zielpfad je Bild stehen in `assets/generated.json`, `npm run assets:fetch` lädt fehlende Dateien nach; die Prompts in `assets/prompts.json`.
+  - 20 Pferdeporträts (5 Fellfarben × Profil/Galopp × Fohlen/erwachsen). Das Pferdeprofil zeigt das Profilbild; Fohlen und Jährlinge die Fohlenfassung.
+  - 23 Personal-Porträts: je Rolle mindestens eine Frau und ein Mann. Zugeordnet wird über den Vornamen aus der Namensliste des Generators und deterministisch über die Personen-ID. Personen aus der Weltdatei (reale Namen, Platzhalter) und unbekannte Vornamen bekommen kein Porträt, sondern Initialen – damit kein erfundenes Gesicht einer realen Person zugeordnet wird.
+  - 10 Rennbahn-Plakate: Ascot, Epsom, Newmarket (auch July Course), York, Goodwood, Doncaster, Sandown, Newbury, dazu ein Allwetter-Plakat (Flutlicht) und ein allgemeines Plakat (aus dem Stiltest) für alle übrigen Bahnen. Cheltenham aus der Konzeptliste entfällt (Hindernisbahn, im Spiel nicht vorhanden), dafür Newbury.
+  - 6 Klassiker-Plakate (2000/1000 Guineas, Derby, Oaks, St Leger, King George) als Kopfbild ihrer Rennseiten.
+  - 8 Szenen: Hof in drei Ausbaustufen (nach Boxenzahl: unter 16, ab 16, ab 30), Bergstrecke, Schwimmbecken, Tierklinik, Gestütsweiden, Büro.
+- **Nicht erzeugt**: Abzeichen-Ebenen und Jockey mit Graustufen-Silks. Gemalte Ebenen lassen sich nicht passgenau über unterschiedlich gemalte Porträts legen; die Abzeichen stehen deshalb als Text unter dem Porträt, die Rennfarben bleiben SVG (frei einfärbbar). Ebenso entfällt die Pergament-Textur (CSS genügt). Videos entfallen laut Konzept.
+- **Kosten**: Stiltest 15 + Bibliothek 33 = **48 Credits** (Guthaben 603,5 → 555,5), Rahmen 350.
+- **Einbindung**: `src/ui/assets.ts` (Pfade, Zuordnung), `Portrait.tsx` (Pferdeporträt, Personen-Avatar, Kopfbild). Kopfbilder im Startbildschirm, Büro, Gestüt, auf Rennseiten und in der Anlage; Avatare in Personal und Jockeys; Vorschaubilder der Ausbauten.
+- **Nutzungsrechte**: vor einer öffentlichen Veröffentlichung laut Higgsfield-Tarif prüfen (Konzept).
 
 ### Rennansicht
 

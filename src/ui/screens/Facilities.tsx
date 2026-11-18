@@ -1,5 +1,9 @@
 import { useCommand, useQuery } from '../api';
 import { Bar, Loading, Money } from '../components/common';
+import { Banner } from '../components/Portrait';
+import { sceneImage, yardScene, type Scene } from '../assets';
+
+const SCENE: Record<string, Scene> = { pool: 'equine_pool', hill: 'gallops', clinic: 'vet_clinic', stud: 'stud_paddocks' };
 
 export function FacilitiesScreen() {
   const { data, error } = useQuery('facilities', undefined);
@@ -8,6 +12,9 @@ export function FacilitiesScreen() {
   return (
     <div className="col" style={{ gap: 16 }}>
       <h1>Anlage</h1>
+      <Banner src={sceneImage(yardScene(data.boxes))} height={190} position="center 55%">
+        Dein Hof: {data.boxes} Boxen
+      </Banner>
       <div className="grid two">
         <div className="card">
           <h3>Boxen</h3>
@@ -40,7 +47,12 @@ export function FacilitiesScreen() {
             <tbody>
               {data.items.map((i) => (
                 <tr key={i.key}>
-                  <td><b>{i.label}</b></td>
+                  <td>
+                    <div className="person">
+                      {SCENE[i.key] && <img className="thumb" src={sceneImage(SCENE[i.key]!)} alt="" loading="lazy" />}
+                      <b>{i.label}</b>
+                    </div>
+                  </td>
                   <td className="small">{i.effect}</td>
                   <td className="num"><Money v={i.cost} /></td>
                   <td className="num"><Money v={i.upkeep} /></td>

@@ -3,6 +3,8 @@ import { toast, useCommand, useQuery } from '../api';
 import { Bar, HorseLink, Link, Loading, Modal, Money, Stars, useSort, Term } from '../components/common';
 import { navigate } from '../router';
 import type { MareRow, StallionRow, StudView } from '../../engine/breeding/queries';
+import { Banner } from '../components/Portrait';
+import { sceneImage } from '../assets';
 
 const TABS: Array<[string, string]> = [
   ['mares', 'Stuten & Deckplan'],
@@ -17,6 +19,7 @@ export function StudScreen({ tab = 'mares', mareId }: { tab?: string; mareId?: s
   if (!data) return <Loading error={error} />;
   return (
     <div className="col" style={{ gap: 14 }}>
+      <Banner src={sceneImage('stud_paddocks')} height={150} position="center 60%" />
       <div className="row">
         <h1 style={{ marginBottom: 0 }}>Gestüt</h1>
         <span className="muted">

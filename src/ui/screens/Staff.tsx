@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { toast, useCommand, useQuery } from '../api';
 import { Bar, HorseLink, Loading, Money, Stars } from '../components/common';
 import { ContractDialog } from '../components/Contract';
+import { StaffAvatar } from '../components/Portrait';
 import type { StaffRow, StaffView } from '../../engine/game/econQueries';
 import type { StaffRole } from '../../engine/types';
 
@@ -55,6 +56,9 @@ export function StaffScreen() {
                 <tr key={s.id}>
                   <td className="small">{s.roleLabel}</td>
                   <td>
+                    <div className="person">
+                    {s.generated && <StaffAvatar role={s.role} name={s.name} id={s.id} />}
+                    <div>
                     {s.name}
                     {s.leaving && (
                       <div>
@@ -70,6 +74,8 @@ export function StaffScreen() {
                         {s.jockey.allowance ? ` · Erlaubnis ${s.jockey.allowance} lb` : ''} · {s.jockey.careerWins} Siege{s.jockey.suspended ? ' · gesperrt' : ''}
                       </div>
                     )}
+                    </div>
+                    </div>
                   </td>
                   <td><Stars v={s.stars} /></td>
                   <td className="num">{s.age}</td>
@@ -149,6 +155,9 @@ export function StaffScreen() {
               <tr key={s.id}>
                 <td className="small">{s.roleLabel}</td>
                 <td>
+                  <div className="person">
+                  {s.generated && <StaffAvatar role={s.role} name={s.name} id={s.id} />}
+                  <div>
                   {s.name}
                   {s.specialty && <span className="small muted"> · {s.specialty}</span>}
                   {s.jockey && (
@@ -157,6 +166,8 @@ export function StaffScreen() {
                       {s.jockey.allowance ? ` · Erlaubnis ${s.jockey.allowance} lb` : ''} · {s.jockey.careerWins} Siege
                     </div>
                   )}
+                  </div>
+                  </div>
                 </td>
                 <td><Stars v={s.stars} /></td>
                 <td className="num">{s.age}</td>

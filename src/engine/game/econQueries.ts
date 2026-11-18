@@ -52,6 +52,8 @@ export interface StaffRow {
   id: string;
   name: string;
   role: StaffRole;
+  /** erfundene Person (kein Eintrag aus der Weltdatei) – nur dann gibt es ein Porträt */
+  generated: boolean;
   roleLabel: string;
   age: number;
   stars: number;
@@ -94,6 +96,7 @@ export function staffRow(g: GameState, s: Staff): StaffRow {
     id: s.id,
     name: s.name,
     role: s.role,
+    generated: s.source === 'generated',
     roleLabel: ROLE_LABEL[s.role],
     age: s.age,
     stars: stars(s),

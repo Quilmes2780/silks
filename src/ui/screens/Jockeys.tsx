@@ -4,12 +4,14 @@ import { Loading, Money, PlaceholderTag, SilksIcon, Stars, useSort } from '../co
 import { ContractDialog } from '../components/Contract';
 import type { JockeyView } from '../../engine/game/queries';
 import type { StaffRow } from '../../engine/game/econQueries';
+import { StaffAvatar } from '../components/Portrait';
 
 function asStaffRow(j: JockeyView): StaffRow {
   return {
     id: j.id,
     name: j.name,
     role: 'jockey',
+    generated: !j.placeholder,
     roleLabel: 'Jockey',
     age: j.age,
     stars: j.rating,
@@ -62,7 +64,10 @@ export function JockeysScreen() {
             {sorted.map((j) => (
               <tr key={j.id} className={j.stable?.isPlayer ? 'mine' : ''}>
                 <td>
-                  {j.name} <PlaceholderTag show={j.placeholder} />
+                  <span className="person">
+                  {!j.placeholder && <StaffAvatar role="jockey" name={j.name} id={j.id} size={28} />}
+                  <span>{j.name}</span> <PlaceholderTag show={j.placeholder} />
+                  </span>
                   {j.suspendedUntilWeek !== null && <span className="pill bad" style={{ marginLeft: 6 }}>gesperrt bis W{j.suspendedUntilWeek}</span>}
                 </td>
                 <td className="num"><Stars v={j.rating} /></td>

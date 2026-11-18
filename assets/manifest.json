@@ -1,5 +1,5 @@
 {
-  "note": "Ordnet Fellfarbe, Pose und Altersstufe einer Bilddatei zu. file = null bedeutet: noch nicht generiert, die UI zeigt einen SVG-Platzhalter. Pfade relativ zum Projektstamm; beim Einbinden nach public/ kopieren.",
+  "note": "Pferde-Bibliothek: Fellfarbe × Pose × Alter. Die Bilder liegen unter public/assets (siehe assets/generated.json, npm run assets:fetch); die Oberfläche lädt sie über src/ui/assets.ts.",
   "version": 1,
   "coats": [
     "bay",
@@ -12,9 +12,7 @@
     "profile",
     "gallop"
   ],
-  "posesPlanned": [
-    "three_quarter"
-  ],
+  "posesPlanned": [],
   "ages": [
     "foal",
     "adult"
@@ -24,140 +22,140 @@
       "coat": "bay",
       "pose": "profile",
       "age": "foal",
-      "file": null,
+      "file": "assets/horses/bay_profile_foal.webp",
       "promptId": "horse_bay_profile_foal"
     },
     {
       "coat": "bay",
       "pose": "profile",
       "age": "adult",
-      "file": null,
+      "file": "assets/horses/bay_profile_adult.webp",
       "promptId": "horse_bay_profile_adult"
     },
     {
       "coat": "bay",
       "pose": "gallop",
       "age": "foal",
-      "file": null,
+      "file": "assets/horses/bay_gallop_foal.webp",
       "promptId": "horse_bay_gallop_foal"
     },
     {
       "coat": "bay",
       "pose": "gallop",
       "age": "adult",
-      "file": null,
+      "file": "assets/horses/bay_gallop_adult.webp",
       "promptId": "horse_bay_gallop_adult"
     },
     {
       "coat": "chestnut",
       "pose": "profile",
       "age": "foal",
-      "file": null,
+      "file": "assets/horses/chestnut_profile_foal.webp",
       "promptId": "horse_chestnut_profile_foal"
     },
     {
       "coat": "chestnut",
       "pose": "profile",
       "age": "adult",
-      "file": null,
+      "file": "assets/horses/chestnut_profile_adult.webp",
       "promptId": "horse_chestnut_profile_adult"
     },
     {
       "coat": "chestnut",
       "pose": "gallop",
       "age": "foal",
-      "file": null,
+      "file": "assets/horses/chestnut_gallop_foal.webp",
       "promptId": "horse_chestnut_gallop_foal"
     },
     {
       "coat": "chestnut",
       "pose": "gallop",
       "age": "adult",
-      "file": null,
+      "file": "assets/horses/chestnut_gallop_adult.webp",
       "promptId": "horse_chestnut_gallop_adult"
     },
     {
       "coat": "black",
       "pose": "profile",
       "age": "foal",
-      "file": null,
+      "file": "assets/horses/black_profile_foal.webp",
       "promptId": "horse_black_profile_foal"
     },
     {
       "coat": "black",
       "pose": "profile",
       "age": "adult",
-      "file": null,
+      "file": "assets/horses/black_profile_adult.webp",
       "promptId": "horse_black_profile_adult"
     },
     {
       "coat": "black",
       "pose": "gallop",
       "age": "foal",
-      "file": null,
+      "file": "assets/horses/black_gallop_foal.webp",
       "promptId": "horse_black_gallop_foal"
     },
     {
       "coat": "black",
       "pose": "gallop",
       "age": "adult",
-      "file": null,
+      "file": "assets/horses/black_gallop_adult.webp",
       "promptId": "horse_black_gallop_adult"
     },
     {
       "coat": "grey",
       "pose": "profile",
       "age": "foal",
-      "file": null,
+      "file": "assets/horses/grey_profile_foal.webp",
       "promptId": "horse_grey_profile_foal"
     },
     {
       "coat": "grey",
       "pose": "profile",
       "age": "adult",
-      "file": null,
+      "file": "assets/horses/grey_profile_adult.webp",
       "promptId": "horse_grey_profile_adult"
     },
     {
       "coat": "grey",
       "pose": "gallop",
       "age": "foal",
-      "file": null,
+      "file": "assets/horses/grey_gallop_foal.webp",
       "promptId": "horse_grey_gallop_foal"
     },
     {
       "coat": "grey",
       "pose": "gallop",
       "age": "adult",
-      "file": null,
+      "file": "assets/horses/grey_gallop_adult.webp",
       "promptId": "horse_grey_gallop_adult"
     },
     {
       "coat": "brown",
       "pose": "profile",
       "age": "foal",
-      "file": null,
+      "file": "assets/horses/brown_profile_foal.webp",
       "promptId": "horse_brown_profile_foal"
     },
     {
       "coat": "brown",
       "pose": "profile",
       "age": "adult",
-      "file": null,
+      "file": "assets/horses/brown_profile_adult.webp",
       "promptId": "horse_brown_profile_adult"
     },
     {
       "coat": "brown",
       "pose": "gallop",
       "age": "foal",
-      "file": null,
+      "file": "assets/horses/brown_gallop_foal.webp",
       "promptId": "horse_brown_gallop_foal"
     },
     {
       "coat": "brown",
       "pose": "gallop",
       "age": "adult",
-      "file": null,
+      "file": "assets/horses/brown_gallop_adult.webp",
       "promptId": "horse_brown_gallop_adult"
     }
   ],

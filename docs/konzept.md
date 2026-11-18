@@ -283,7 +283,7 @@ Rechtlicher Merkposten für eine spätere Veröffentlichung: Rennnamen ohne Spon
 
 **Noch offen**
 
-- [ ] Zufallsanteil der Rennen: Empfehlung ist ein mittlerer Wert als Standard und ein Regler im Spielstart-Dialog („berechenbar“ bis „wie im echten Leben“).
+- [x] Zufallsanteil der Rennen: Standard „ausgewogen“ (40 %), Regler und drei Voreinstellungen im Spielstart-Dialog (umgesetzt in Phase 5).
 
 ## Prompt für Claude Code
 

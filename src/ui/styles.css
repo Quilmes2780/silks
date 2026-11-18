@@ -204,3 +204,8 @@ abbr.term { text-decoration: underline dotted; text-underline-offset: 3px; curso
 .glossary { margin: 0; display: grid; gap: 10px; }
 .glossary dt { font-weight: 600; }
 .glossary dd { margin: 2px 0 0; }
+.commentary { font-size: 12.5px; display: flex; flex-direction: column; gap: 2px; min-height: 90px; }
+.commentary .mine { color: var(--blue); font-weight: 600; }
+.commentary .big { font-weight: 700; }
+.photo-finish { position: absolute; right: 10px; top: 10px; width: min(380px, 70%); background: #fffdf7; border: 3px solid #5a4630; border-radius: 4px; padding: 6px 8px; box-shadow: 0 4px 14px rgba(0,0,0,0.35); }
+.photo-finish .pf-title { font-family: var(--serif); font-weight: 700; color: var(--red); letter-spacing: 1px; text-transform: uppercase; font-size: 12px; margin-bottom: 4px; }

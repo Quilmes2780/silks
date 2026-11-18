@@ -3,6 +3,7 @@ import { call } from '../api';
 import type { ReplayView } from '../../engine/game/queries';
 import { SilksIcon } from './common';
 import { raceTime } from '../../engine/game/format';
+import { buildCommentary, marginWords, photoFinish } from './commentary';
 
 /**
  * Rennansicht in Draufsicht (Canvas 2D). Das Replay ist eine deterministische Neusimulation
@@ -82,7 +83,19 @@ function Player({ data }: { data: ReplayView }) {
     return { xy, dist };
   }, [t, data]);
 
-  const order = useMemo(() => data.runners.map((_, i) => i).sort((a, b) => state.dist[b]! - state.dist[a]!), [state, data.runners]);
+  // Reihenfolge nach gelaufener Strecke; wer im Ziel ist, steht nach offiziellem Platz (auch nach dem Auslaufen)
+  const order = useMemo(
+    () =>
+      data.runners
+        .map((_, i) => i)
+        .sort((a, b) => {
+          const fa = state.dist[a]! >= data.distanceM;
+          const fb = state.dist[b]! >= data.distanceM;
+          if (fa && fb) return data.runners[a]!.position - data.runners[b]!.position;
+          return state.dist[b]! - state.dist[a]!;
+        }),
+    [state, data],
+  );
 
   // Zeichnen
   useEffect(() => {
@@ -178,20 +191,11 @@ function Player({ data }: { data: ReplayView }) {
   const leader = order[0]!;
   const leaderDist = state.dist[leader]!;
   const passed = data.sectionalMarks.filter((m) => m <= leaderDist);
-  const ticker = useMemo(() => {
-    if (t <= 0.2) return 'Die Boxen öffnen sich …';
-    if (leaderDist >= data.distanceM) {
-      const w = data.runners.find((x) => x.position === 1)!;
-      return `${w.name} gewinnt! Siegerzeit ${raceTime(finishT)}`;
-    }
-    const remaining = data.distanceM - leaderDist;
-    const second = order[1];
-    const gap = second !== undefined ? (leaderDist - state.dist[second]!) / 2.4 : 0;
-    const lname = data.runners[leader]!.name;
-    if (remaining < 200) return `Letzte 200 m: ${lname} vorn${gap < 0.6 ? `, ${data.runners[second!]!.name} kommt heran!` : ` mit ${gap.toFixed(1)} Längen`}`;
-    if (remaining < 600) return `${Math.round(remaining)} m vor dem Ziel – ${lname} führt, die Jockeys greifen an`;
-    return `${lname} führt ${gap > 1 ? `mit ${gap.toFixed(1)} Längen` : 'knapp'} · noch ${Math.round(remaining)} m`;
-  }, [t, leaderDist, order, state, data, leader, finishT]);
+  const commentary = useMemo(() => buildCommentary(data), [data]);
+  const photo = useMemo(() => photoFinish(data), [data]);
+  const said = commentary.filter((c) => c.t <= t);
+  const ticker = t <= 0.2 ? 'Die Boxen öffnen sich …' : (said.at(-1)?.text ?? '');
+  const showPhoto = photo !== null && t >= finishT + 0.5;
 
   return (
     <div className="grid side">
@@ -199,6 +203,7 @@ function Player({ data }: { data: ReplayView }) {
         <div className="race-canvas-wrap">
           <canvas ref={canvas} style={{ width: '100%' }} />
           <div className="ticker">{ticker}</div>
+          {showPhoto && <PhotoFinish data={data} photo={photo!} />}
         </div>
         <div className="row">
           <button className="btn small primary" onClick={() => {
@@ -240,6 +245,13 @@ function Player({ data }: { data: ReplayView }) {
           Zwischenzeiten des Führenden:{' '}
           {passed.length === 0 ? '–' : passed.map((m) => `${Math.round(m)} m`).join(' · ')} · gelaufen {Math.round(Math.min(leaderDist, data.distanceM))} von {data.distanceM} m
         </div>
+        <div className="commentary">
+          {said.slice(-6).reverse().map((c, i) => (
+            <div key={`${c.t}-${i}`} className={`${c.mine ? 'mine' : ''} ${c.big ? 'big' : ''}`}>
+              <span className="mono muted">{raceTime(Math.min(c.t, finishT))}</span> {c.text}
+            </div>
+          ))}
+        </div>
       </div>
       <div className="card leaderboard">
         <h3>Positionen</h3>
@@ -256,6 +268,40 @@ function Player({ data }: { data: ReplayView }) {
             );
           })}
         </ol>
+      </div>
+    </div>
+  );
+}
+
+/** Zielfoto: die ersten drei an der Ziellinie, Abstände maßstäblich (1 Länge ≈ 2,4 m). */
+function PhotoFinish({ data, photo }: { data: ReplayView; photo: Array<{ idx: number; behindL: number }> }) {
+  const W = 360;
+  const lineX = 300;
+  const perL = 70;
+  return (
+    <div className="photo-finish">
+      <div className="pf-title">Zielfoto</div>
+      <svg viewBox={`0 0 ${W} ${28 * photo.length + 16}`} width="100%" role="img" aria-label="Zielfoto">
+        <rect x={0} y={0} width={W} height={28 * photo.length + 16} fill="#efe9d8" />
+        <line x1={lineX} x2={lineX} y1={0} y2={28 * photo.length + 16} stroke="#8e2b22" strokeWidth={2} />
+        {photo.map((p, row) => {
+          const rn = data.runners[p.idx]!;
+          const nose = lineX - p.behindL * perL;
+          const y = 14 + row * 28;
+          return (
+            <g key={rn.horseId}>
+              <rect x={nose - 120} y={y - 7} width={120} height={14} rx={7} fill="#4a3424" opacity={0.85} />
+              <circle cx={nose - 4} cy={y} r={7} fill="#4a3424" />
+              <rect x={nose - 78} y={y - 12} width={22} height={10} rx={3} fill={rn.silks.body} stroke={rn.silks.pattern2} strokeWidth={1.5} />
+              <text x={8} y={y + 4} fontSize={11} fill="#2a2620" fontWeight={rn.isPlayer ? 700 : 400}>
+                {row + 1}. {rn.name}
+              </text>
+            </g>
+          );
+        })}
+      </svg>
+      <div className="small">
+        {data.runners[photo[0]!.idx]!.name} gewinnt mit {marginWords(photo[1]?.behindL ?? 0)}.
       </div>
     </div>
   );

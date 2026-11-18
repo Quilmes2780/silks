@@ -228,3 +228,9 @@ Ziel laut Konzept: Ein Außenstehender kann ohne Erklärung spielen. Videos entf
 ### Grafik (Higgsfield)
 
 - **Stiltest** (18.11.2026): 12 Bilder für 15 Credits. Nano Banana 2.1 kostet 1,5 Credits je Bild (1k), GPT Image 2.6 in mittlerer Qualität 0,5 Credits. Beide treffen den Ölbild- und Plakatstil; Auswahl durch den Spieler steht aus.
+
+### Rennansicht
+
+- **Kommentar**: Statt einer einzigen Zeile entsteht aus dem Replay eine Liste von Kommentarzeilen mit Zeitpunkt (Start, Rennereignisse wie schlechter Start oder eingeschlossen, Führungswechsel mit mindestens 2 s Bestand, Halbzeit, 400 m und 200 m vor dem Ziel, eigenes Pferd 400 m vor dem Ziel, Zieleinlauf mit Abstand in Worten). Die letzten sechs Zeilen stehen unter der Bahn, eigene Pferde hervorgehoben.
+- **Zielfoto**: Liegt der Zweite weniger als 0,3 Längen zurück, erscheint nach dem Zieleinlauf ein Zielfoto der ersten drei, maßstäblich nach dem amtlichen Abstand.
+- **Positionsliste**: Pferde im Ziel stehen nach dem offiziellen Platz (vorher nach der Strecke inklusive Auslaufen).

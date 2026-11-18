@@ -852,7 +852,7 @@ export interface ReplayView {
   finish: [number, number];
   start: [number, number];
   frameDt: number;
-  runners: Array<{ horseId: string; name: string; silks: Silks; isPlayer: boolean; position: number }>;
+  runners: Array<{ horseId: string; name: string; silks: Silks; isPlayer: boolean; position: number; beatenL: number; events: RaceEvent[] }>;
   /** frames[k] = [x0, y0, x1, y1, …] und Distanz je Pferd */
   frames: Array<{ t: number; xy: number[]; dist: number[] }>;
   sectionalMarks: number[];
@@ -902,7 +902,7 @@ export function replayView(g: GameState, raceId: string): ReplayView {
     runners: r.replayInput!.runners.map((x) => {
       const h = g.horses[x.horseId]!;
       const res = sim.results.find((y) => y.horseId === x.horseId)!;
-      return { horseId: h.id, name: h.name, silks: g.stables[h.stableId]!.silks, isPlayer: h.stableId === g.playerStableId, position: res.position };
+      return { horseId: h.id, name: h.name, silks: g.stables[h.stableId]!.silks, isPlayer: h.stableId === g.playerStableId, position: res.position, beatenL: res.beatenL, events: res.events };
     }),
     frames,
     sectionalMarks: sim.results[0]!.sectionals.map((s) => s.atM),

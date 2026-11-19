@@ -10,9 +10,11 @@ const url = (file: string) => `${import.meta.env.BASE_URL}${file}`;
 export type Coat = 'bay' | 'chestnut' | 'black' | 'grey' | 'brown';
 const COATS: readonly string[] = ['bay', 'chestnut', 'black', 'grey', 'brown'];
 
-export function horseImage(coat: string, pose: 'profile' | 'gallop', age: 'foal' | 'adult'): string {
+export function horseImage(coat: string, pose: 'profile' | 'gallop', age: 'foal' | 'adult', female = false): string {
   const c = COATS.includes(coat) ? coat : 'bay';
-  return url(`assets/horses/${c}_${pose}_${age}.webp`);
+  // Stuten haben ein eigenes Standporträt; Fohlen und Galopp-Bilder sind neutral
+  const sex = female && age === 'adult' && pose === 'profile' ? '_mare' : '';
+  return url(`assets/horses/${c}_${pose}_${age}${sex}.webp`);
 }
 
 // ---- Personal: je Rolle Porträts für Männer und Frauen ----

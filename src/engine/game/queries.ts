@@ -346,6 +346,8 @@ export interface HorseProfileView {
   sex: string;
   colour: string;
   colourKey: string;
+  /** weiblich (für das Porträt) */
+  female: boolean;
   markings: Horse['markings'];
   sire: string | null;
   dam: string | null;
@@ -468,6 +470,7 @@ export function horseProfile(g: GameState, horseId: string): HorseProfileView {
     sex: sexLabel(h.sex, h.gelded, age),
     colour: COLOUR_LABEL[h.colour] ?? h.colour,
     colourKey: h.colour,
+    female: h.sex === 'female',
     markings: h.markings,
     sire: h.sireName,
     dam: h.damName,

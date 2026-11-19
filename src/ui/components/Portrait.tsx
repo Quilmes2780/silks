@@ -26,12 +26,14 @@ export function HorsePortrait({
   age = 'adult',
   pose = 'profile',
   size = 180,
+  female = false,
 }: {
   coat: string;
   markings?: Markings;
   age?: 'foal' | 'adult';
   pose?: 'profile' | 'gallop';
   size?: number;
+  female?: boolean;
 }) {
   const [failed, setFailed] = useState(false);
   const label = markingsLabel(markings);
@@ -40,7 +42,7 @@ export function HorsePortrait({
       {failed ? (
         <div className="portrait placeholder" style={{ width: size, height: size }} />
       ) : (
-        <img className="portrait" src={horseImage(coat, pose, age)} width={size} height={size} alt="Pferdeporträt" loading="lazy" onError={() => setFailed(true)} />
+        <img className="portrait" src={horseImage(coat, pose, age, female)} width={size} height={size} alt="Pferdeporträt" loading="lazy" onError={() => setFailed(true)} />
       )}
       {label && <figcaption className="small muted">Abzeichen: {label}</figcaption>}
     </figure>

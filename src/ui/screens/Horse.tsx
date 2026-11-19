@@ -72,7 +72,7 @@ function Overview({ h }: { h: HorseProfileView }) {
   return (
     <div className="col" style={{ gap: 16 }}>
       <div className="card hero">
-        <HorsePortrait coat={h.colourKey} markings={h.markings} age={h.age <= 1 ? 'foal' : 'adult'} size={230} />
+        <HorsePortrait coat={h.colourKey} markings={h.markings} age={h.age <= 1 ? 'foal' : 'adult'} female={h.female} size={230} />
         <div className="col" style={{ gap: 12, flex: 1 }}>
           <div className="metrics">
             <div className="metric">

@@ -10,7 +10,7 @@ Dieses Dokument hält alle Annahmen fest, die beim Bau getroffen wurden. Bei Wid
 | 2 | Startpopulation der KI-Ställe | Generierte, fiktive Ställe und Pferde, bis echte Daten in `data/world` eingetragen sind. Einträge aus der Weltdatei haben Vorrang. |
 | 3 | Posen der Pferdeporträts | Laut Asset-Tabelle: 2 Posen (Profil, Galopp) × 5 Fellfarben × 2 Altersstufen = 20 Bilder. Das Manifest kann eine dritte Pose (Dreiviertel) aufnehmen. |
 | 4 | Speed Figures / Sectionals | In dieser Runde immer sichtbar. Die Freischaltung über den Datenanalysten folgt mit Phase 3. |
-| 5 | Training | Wochenplan (Mo–Sa, je ein Baustein) als Tab im Pferdeprofil, dazu Schnellvorlagen in der Stall-Liste. Ein eigener Trainings-Screen (Raster Pferd × Tag) folgt später. |
+| 5 | Training | Wochenplan (Mo–Sa, je ein Baustein) als Tab im Pferdeprofil, dazu Schnellvorlagen in der Stall-Liste. Seit 19.11.2026 zusätzlich der Bildschirm „Training“ (Raster Pferd × Tag, siehe Phase 5). |
 | 6 | Jockeys und Geld | Freier Jockey-Pool mit fester Reitgebühr. Kontostand nur mit Preisgeld, Nenngebühren, Reitgebühren und einer pauschalen Trainingsgebühr pro Pferd und Woche. |
 | 7 | Kalender | Echte Group-/Listed- und Heritage-Rennen in ihren üblichen Wochen, dazu generische Handicaps, Maidens und Novice-Rennen auf realen Bahnen. |
 
@@ -218,6 +218,7 @@ Ziel laut Konzept: Ein Außenstehender kann ohne Erklärung spielen. Videos entf
 - **Archiv**: Sectionals, Tempokurven und Rennereignisse der Konkurrenz nur noch für die laufende Saison (vorher zwei). Replays und Nennlisten: Rennen mit eigenen Startern zwei Saisons, sonst eine.
 - **Export** als gzip (`.json.gz`); der Import liest gzip und reines JSON.
 - **Ergebnis** (`npx tsx scripts/save-size.ts 4`, Seed 7, 20 KI-Ställe): Der gespeicherte Stand wächst um ~4,8 MB je Saison statt ~14 MB, die Exportdatei um ~1 MB (nach 4 Saisons 21,9 MB JSON, 4,0 MB gzip). Im Arbeitsspeicher des Workers liegen weiterhin ~15 MB je Saison.
+- **Nachverdichtung (19.11.2026)**: Starter gelaufener Rennen stehen nur noch als Verweis auf ihren Start (Index in `resultRunIds`, ~550 → ~40 Byte je Rennen); Starts tragen keine Rennen-ID mehr, wenn das Rennen sie listet; Standardtaktik als 0, leere Sectionals entfallen; Ausschreibungen als Werteliste; Genotyp-Allele als Zeichenkette (zwei Zeichen je Wert, verlustfrei bei zwei Nachkommastellen); Wertverlauf mit Wochenabständen. Messung mit `npx tsx scripts/save-detail.ts 3` (Seed 7): Zuwachs 2,6 / 3,4 / 3,0 MB je Saison statt ~4,6 MB – das Ziel von ~3 MB ist erreicht. Ältere Spielstände werden weiter gelesen und beim nächsten Speichern neu verdichtet.
 
 ### Einstieg
 
@@ -234,8 +235,9 @@ Ziel laut Konzept: Ein Außenstehender kann ohne Erklärung spielen. Videos entf
   - 10 Rennbahn-Plakate: Ascot, Epsom, Newmarket (auch July Course), York, Goodwood, Doncaster, Sandown, Newbury, dazu ein Allwetter-Plakat (Flutlicht) und ein allgemeines Plakat (aus dem Stiltest) für alle übrigen Bahnen. Cheltenham aus der Konzeptliste entfällt (Hindernisbahn, im Spiel nicht vorhanden), dafür Newbury.
   - 6 Klassiker-Plakate (2000/1000 Guineas, Derby, Oaks, St Leger, King George) als Kopfbild ihrer Rennseiten.
   - 8 Szenen: Hof in drei Ausbaustufen (nach Boxenzahl: unter 16, ab 16, ab 30), Bergstrecke, Schwimmbecken, Tierklinik, Gestütsweiden, Büro.
+- **Stutenporträts (19.11.2026)**: Erwachsene Stuten zeigen ein eigenes Kopf-Schulter-Porträt je Fellfarbe (5 Bilder). Ein erster Versuch mit Ganzkörper-Stuten ergab trotz Prompt durchweg männliche Anatomie und wurde verworfen; der Bildausschnitt umgeht das. Fohlen, Hengste und Wallache behalten die bisherigen Bilder.
 - **Nicht erzeugt**: Abzeichen-Ebenen und Jockey mit Graustufen-Silks. Gemalte Ebenen lassen sich nicht passgenau über unterschiedlich gemalte Porträts legen; die Abzeichen stehen deshalb als Text unter dem Porträt, die Rennfarben bleiben SVG (frei einfärbbar). Ebenso entfällt die Pergament-Textur (CSS genügt). Videos entfallen laut Konzept.
-- **Kosten**: Stiltest 15 + Bibliothek 33 = **48 Credits** (Guthaben 603,5 → 555,5), Rahmen 350.
+- **Kosten**: Stiltest 15 + Bibliothek 33 + Stuten 5 (10 Bilder, davon 5 verworfen) = **53 Credits**, Rahmen 350.
 - **Einbindung**: `src/ui/assets.ts` (Pfade, Zuordnung), `Portrait.tsx` (Pferdeporträt, Personen-Avatar, Kopfbild). Kopfbilder im Startbildschirm, Büro, Gestüt, auf Rennseiten und in der Anlage; Avatare in Personal und Jockeys; Vorschaubilder der Ausbauten.
 - **Nutzungsrechte**: vor einer öffentlichen Veröffentlichung laut Higgsfield-Tarif prüfen (Konzept).
 
@@ -244,3 +246,8 @@ Ziel laut Konzept: Ein Außenstehender kann ohne Erklärung spielen. Videos entf
 - **Kommentar**: Statt einer einzigen Zeile entsteht aus dem Replay eine Liste von Kommentarzeilen mit Zeitpunkt (Start, Rennereignisse wie schlechter Start oder eingeschlossen, Führungswechsel mit mindestens 2 s Bestand, Halbzeit, 400 m und 200 m vor dem Ziel, eigenes Pferd 400 m vor dem Ziel, Zieleinlauf mit Abstand in Worten). Die letzten sechs Zeilen stehen unter der Bahn, eigene Pferde hervorgehoben.
 - **Zielfoto**: Liegt der Zweite weniger als 0,3 Längen zurück, erscheint nach dem Zieleinlauf ein Zielfoto der ersten drei, maßstäblich nach dem amtlichen Abstand.
 - **Positionsliste**: Pferde im Ziel stehen nach dem offiziellen Platz (vorher nach der Strecke inklusive Auslaufen).
+
+### Training (19.11.2026)
+
+- Neuer Menüpunkt **Training**: alle eigenen Pferde mit Fitness, Frische, Vorlage und den sechs Trainingstagen als Auswahl; Tage nach Belastung eingefärbt (hoch, mittel, niedrig, erholend), dazu die Trainer-Einschätzung zur Distanz und das nächste Rennen. Eine Vorlage lässt sich für alle gesunden Pferde auf einmal setzen. Verletzte Pferde zeigen statt der Tage einen Hinweis.
+- **Trainer-Einschätzung** (Distanz, Boden, Laufstil) zusätzlich in der Stall-Übersicht und im Rennkalender, sobald dort ein Pferd gewählt ist.

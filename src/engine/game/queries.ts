@@ -254,6 +254,8 @@ export interface StableRow {
   training: string;
   nextRace: { raceId: string; name: string; dateLabel: string } | null;
   placeholder: boolean;
+  /** Einschätzung des eigenen Trainers (Distanz, Boden, Laufstil) */
+  trainerOpinion: { distance: string; going: string; style: string };
 }
 
 export function stableRows(g: GameState, stableId?: string): StableRow[] {
@@ -285,6 +287,7 @@ export function stableRows(g: GameState, stableId?: string): StableRow[] {
         training: tpl ? tpl[1].label : 'individuell',
         nextRace: next ? { raceId: next.raceId, name: next.raceName, dateLabel: next.dateLabel } : null,
         placeholder: h.placeholder,
+        trainerOpinion: trainerOpinion(g, h)!,
       };
     })
     .sort((a, b) => a.age - b.age || a.name.localeCompare(b.name));

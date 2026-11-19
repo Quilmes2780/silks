@@ -104,6 +104,11 @@ export function CalendarScreen({ horseId }: { horseId?: string }) {
           </label>
           <input type="text" placeholder="Suche (Rennen, Bahn)" value={search} onChange={(e) => setSearch(e.target.value)} />
         </div>
+        {horse && (
+          <p className="small" style={{ margin: 0 }}>
+            <b>Trainer zu {horse.name}:</b> beste Distanz etwa {horse.trainerOpinion.distance}; {horse.trainerOpinion.going}; {horse.trainerOpinion.style}.
+          </p>
+        )}
         <div className="chips">
           {CLASSES.map(([c, l]) => (
             <span key={c} className={`chip ${classes.includes(c) ? 'on' : ''}`} onClick={() => setClasses((cs) => (cs.includes(c) ? cs.filter((x) => x !== c) : [...cs, c]))}>

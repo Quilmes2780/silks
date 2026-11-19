@@ -18,6 +18,7 @@ export function StableScreen() {
               {th('name', 'Pferd')}
               {th('age', 'Alter', 'num')}
               <th>Geschlecht</th>
+              <th>Trainer-Einschätzung</th>
               {th('officialRating', 'OR', 'num')}
               {th('starts', 'Starts', 'num')}
               {th('wins', 'Siege', 'num')}
@@ -40,6 +41,10 @@ export function StableScreen() {
                 </td>
                 <td className="num">{h.age}</td>
                 <td className="small">{h.sex}</td>
+                <td className="small" title={`${h.trainerOpinion.going}; ${h.trainerOpinion.style}`}>
+                  <span className="nowrap"><b>{h.trainerOpinion.distance}</b></span>
+                  <div className="muted">{h.trainerOpinion.going}</div>
+                </td>
                 <td className="num">{h.officialRating ?? '–'}</td>
                 <td className="num">{h.starts}</td>
                 <td className="num">{h.wins}</td>
@@ -77,7 +82,8 @@ export function StableScreen() {
         </table>
       </div>
       <p className="small muted">
-        Zahlen in der Spalte SF sind anklickbar und führen zum Rennen, aus dem sie stammen. Training wählst du hier als Vorlage oder im Pferdeprofil Tag für Tag.
+        Zahlen in der Spalte SF sind anklickbar und führen zum Rennen, aus dem sie stammen. Die Trainer-Einschätzung wird mit jedem Start und mit einem
+        besseren Trainer genauer; den Laufstil zeigt der Tooltip. Training wählst du hier als Vorlage oder im Pferdeprofil Tag für Tag.
       </p>
     </div>
   );

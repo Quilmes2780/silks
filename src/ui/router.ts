@@ -6,6 +6,7 @@ export type Route =
   | { name: 'saves' }
   | { name: 'office' }
   | { name: 'stable' }
+  | { name: 'training' }
   | { name: 'horse'; id: string; tab?: string }
   | { name: 'calendar'; horseId?: string }
   | { name: 'raceday' }
@@ -27,6 +28,8 @@ export function parseRoute(hash: string): Route {
       return { name: 'office' };
     case 'stable':
       return { name: 'stable' };
+    case 'training':
+      return { name: 'training' };
     case 'horse':
       return parts[1] ? { name: 'horse', id: parts[1], tab: parts[2] } : { name: 'stable' };
     case 'calendar':

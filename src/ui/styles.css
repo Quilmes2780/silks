@@ -222,3 +222,12 @@ abbr.term { text-decoration: underline dotted; text-underline-offset: 3px; curso
 .banner-text { position: absolute; left: 16px; bottom: 12px; color: #fffdf7; font-family: var(--serif); font-size: 20px; text-shadow: 0 1px 4px rgba(0,0,0,0.7); }
 .welcome .banner { margin-bottom: 18px; }
 @media (max-width: 700px) { .banner { height: 110px !important; } }
+
+/* Trainingsübersicht: Tage nach Belastung eingefärbt */
+.training-grid td.tr-high, .tr-chip.tr-high { background: #f2d9cf; }
+.training-grid td.tr-mid, .tr-chip.tr-mid { background: #f4e5c4; }
+.training-grid td.tr-low, .tr-chip.tr-low { background: #e6eedb; }
+.training-grid td.tr-rest, .tr-chip.tr-rest { background: #dbe7ee; }
+.training-grid select { max-width: 8em; font-size: 12px; background: transparent; }
+.training-grid td:first-child { min-width: 9em; }
+.tr-chip { display: inline-block; padding: 1px 6px; border-radius: 3px; border: 1px solid var(--line); }

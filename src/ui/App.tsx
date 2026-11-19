@@ -5,6 +5,7 @@ import { Fig, HorseLink, Modal, Money, RaceLink, SilksIcon, Toasts } from './com
 import { SavesScreen } from './screens/Saves';
 import { OfficeScreen } from './screens/Office';
 import { StableScreen } from './screens/Stable';
+import { TrainingScreen } from './screens/Training';
 import { HorseScreen } from './screens/Horse';
 import { CalendarScreen } from './screens/Calendar';
 import { RaceDayScreen } from './screens/RaceDay';
@@ -81,6 +82,8 @@ function Screen({ route }: { route: Route }) {
       return <OfficeScreen />;
     case 'stable':
       return <StableScreen />;
+    case 'training':
+      return <TrainingScreen />;
     case 'horse':
       return <HorseScreen id={route.id} tab={route.tab} />;
     case 'calendar':
@@ -138,6 +141,7 @@ function Sidebar({ route }: { route: Route }) {
       <nav className="nav">
         {item({ name: 'office' }, 'Büro', h && h.unread > 0 ? <span className="badge">{h.unread}</span> : null)}
         {item({ name: 'stable' }, 'Stall')}
+        {item({ name: 'training' }, 'Training')}
         {item({ name: 'calendar' }, 'Rennkalender')}
         {item({ name: 'raceday' }, 'Renntag', h && h.runnersThisWeek > 0 ? <span className="badge">{h.runnersThisWeek}</span> : null)}
         {item({ name: 'stud' }, 'Gestüt', h && h.studAlerts > 0 ? <span className="badge">{h.studAlerts}</span> : null)}

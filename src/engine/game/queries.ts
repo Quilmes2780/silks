@@ -252,6 +252,8 @@ export interface StableRow {
   freshness: number;
   injured: boolean;
   training: string;
+  /** Wochenplan Mo–Sa */
+  trainingPlan: TrainingPlan;
   nextRace: { raceId: string; name: string; dateLabel: string } | null;
   placeholder: boolean;
   /** Einschätzung des eigenen Trainers (Distanz, Boden, Laufstil) */
@@ -285,6 +287,7 @@ export function stableRows(g: GameState, stableId?: string): StableRow[] {
         freshness: Math.round(h.condition.freshness),
         injured: !!h.condition.injury,
         training: tpl ? tpl[1].label : 'individuell',
+        trainingPlan: h.training,
         nextRace: next ? { raceId: next.raceId, name: next.raceName, dateLabel: next.dateLabel } : null,
         placeholder: h.placeholder,
         trainerOpinion: trainerOpinion(g, h)!,

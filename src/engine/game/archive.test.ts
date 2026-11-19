@@ -9,8 +9,12 @@ describe('Speicherform von Starts und Rennen', () => {
     const g = createGame({ id: 'a', name: 'A', createdAt: '2026-11-18', seed: 41, world: bundledWorld(), config: { aiStables: 6, horsesPerStable: 20 } });
     for (let i = 0; i < 12; i++) advanceWeek(g);
     expect(Object.keys(g.runs).length).toBeGreaterThan(100);
-    const before = JSON.parse(JSON.stringify({ horses: g.horses, runs: g.runs, races: g.races }));
-    const packed = JSON.parse(JSON.stringify({ ...packAll(g), templates: g.templates }));
+    const before = JSON.parse(JSON.stringify({ horses: g.horses, runs: g.runs, races: g.races, templates: g.templates }));
+    const packed = JSON.parse(JSON.stringify(packAll(g)));
+    // Starter gelaufener Rennen werden zu Verweisen auf die Starts, Genotypen zu Zeichenketten
+    const ranRace = Object.values(packed.races as Record<string, { status: string; runners: unknown[] | null }>).find((r) => r.status === 'run' && r.runners?.length);
+    expect(ranRace!.runners!.some((x) => typeof x === 'number')).toBe(true);
+    expect(Object.values(packed.horses as Record<string, { genotype?: { loci: Record<string, unknown> } }>).some((h) => typeof Object.values(h.genotype?.loci ?? {})[0] === 'string')).toBe(true);
     const ratio = JSON.stringify(packed.runs).length / JSON.stringify(before.runs).length;
     expect(ratio).toBeLessThan(0.75);
     unpackAll(packed);
@@ -18,5 +22,6 @@ describe('Speicherform von Starts und Rennen', () => {
     expect(JSON.parse(JSON.stringify(packed.runs))).toEqual(before.runs);
     expect(JSON.parse(JSON.stringify(packed.races))).toEqual(before.races);
     expect(JSON.parse(JSON.stringify(packed.horses))).toEqual(before.horses);
+    expect(JSON.parse(JSON.stringify(packed.templates))).toEqual(before.templates);
   }, 60000);
 });

@@ -47,9 +47,10 @@ export function compactOldRecords(g: GameState): { races: string[]; runs: string
  * Zeichenketten. Im Speicher bleibt alles in voller Form.
  * ---------------------------------------------------------------------------------------------- */
 
-type Lookup = { races: Record<string, Race>; templates: Record<string, RaceTemplate> };
+type Lookup = { races: Record<string, Race>; templates: Record<string, RaceTemplate>; /** Start-ID → Rennen (beim Laden aus resultRunIds) */ raceOf?: Record<string, string> };
 type Packed = Record<string, unknown> & { _p?: 1 };
 
+const DEFAULT_TACTIC = 'natural|normal|normal';
 const tacticStr = (t: Tactic) => `${t.position}|${t.attack}|${t.path}`;
 const tacticObj = (s: string): Tactic => {
   const [position, attack, path] = s.split('|') as [Tactic['position'], Tactic['attack'], Tactic['path']];
@@ -70,12 +71,15 @@ export function packRun(run: Run, l: Lookup): Packed {
   const out: Packed = { ...run, _p: 1 };
   const d = derived(run, l);
   if (d) for (const [k, v] of Object.entries(d)) if (out[k] === v) delete out[k];
-  out.tactic = tacticStr(run.tactic);
+  out.tactic = tacticStr(run.tactic) === DEFAULT_TACTIC ? 0 : tacticStr(run.tactic);
   // Sectionals flach: atM, splitS, cumS, position, gapL je Messpunkt
   out.sectionals = run.sectionals.flatMap((s) => [s.atM, s.splitS, s.cumS, s.position, s.gapL]);
+  if (run.sectionals.length === 0) delete out.sectionals;
   if (run.speedCurve.length === 0) delete out.speedCurve;
   if (run.events.length === 0) delete out.events;
   if (Number.isNaN(run.finishingSpeedPct)) out.finishingSpeedPct = null;
+  // Das Rennen führt den Start in resultRunIds – die Rennen-ID ergibt sich daraus
+  if (l.races[run.raceId]?.resultRunIds.includes(run.id)) out.raceId = 0;
   // Feste Felder als Werteliste statt Objekt (spart die Schlüsselnamen)
   out.v = RUN_KEYS.map((k) => {
     const x = out[k];
@@ -102,9 +106,12 @@ export function unpackRun(p: Packed, l: Lookup): Run {
     RUN_KEYS.forEach((k, i) => (target[k] = v[i] ?? null));
     delete run.v;
   }
+  if ((run.raceId as unknown) === 0) run.raceId = l.raceOf?.[run.id] ?? '';
   const d = derived(run, l);
   if (d) for (const [k, v] of Object.entries(d)) if (run[k] === undefined) run[k] = v;
-  if (typeof run.tactic === 'string') run.tactic = tacticObj(run.tactic as unknown as string);
+  if ((run.tactic as unknown) === 0) run.tactic = tacticObj(DEFAULT_TACTIC);
+  else if (typeof run.tactic === 'string') run.tactic = tacticObj(run.tactic as unknown as string);
+  run.sectionals ??= [];
   const flat = run.sectionals as unknown as number[];
   if (flat.length && typeof flat[0] === 'number') {
     const secs: Sectional[] = [];
@@ -117,27 +124,106 @@ export function unpackRun(p: Packed, l: Lookup): Run {
   return run;
 }
 
-export function packRace(race: Race): Packed {
+/**
+ * Starter eines gelaufenen Rennens stehen fast vollständig auch im Start-Datensatz. Passt der Start, bleibt
+ * nur sein Index in resultRunIds (plus Erlaubnis und zugeteiltes Gewicht, wenn nicht trivial).
+ */
+export function packRace(race: Race, runs?: Record<string, Run>): Packed {
   const out: Packed = { ...race, _p: 1 };
-  if (race.runners) out.runners = race.runners.map((r) => [r.horseId, r.stableId, r.jockeyId, r.stall, r.weightLb, r.allowanceLb, r.assignedLb, tacticStr(r.tactic)]);
+  if (race.runners)
+    out.runners = race.runners.map((r) => {
+      const t = tacticStr(r.tactic);
+      const k = runs ? race.resultRunIds.findIndex((id) => runs[id]?.horseId === r.horseId) : -1;
+      const run = k >= 0 ? runs![race.resultRunIds[k]!] : undefined;
+      if (run && run.stableId === r.stableId && run.jockeyId === r.jockeyId && run.stall === r.stall && run.weightLb === r.weightLb && tacticStr(run.tactic) === t)
+        return r.allowanceLb === 0 && r.assignedLb === r.weightLb ? k : [k, r.allowanceLb, r.assignedLb];
+      return [r.horseId, r.stableId, r.jockeyId, r.stall, r.weightLb, r.allowanceLb, r.assignedLb, t];
+    });
   out.entries = race.entries.map((e) => ({ ...e, tactic: tacticStr(e.tactic) }));
+  if (race.templateId === race.id) delete out.templateId;
+  if (race.meetingId === meetingOf(race.id)) delete out.meetingId;
   return out;
 }
 
+const meetingOf = (raceId: string) => raceId.replace(/-\d+$/, '');
+
+/** Erster Schritt: alles außer Verweisen auf Starts (die löst resolveRunners auf). */
 export function unpackRace(p: Packed): Race {
   if (!p._p) return p as unknown as Race;
   const { _p, ...rest } = p;
   void _p;
   const race = rest as unknown as Race;
+  race.templateId ??= race.id;
+  race.meetingId ??= meetingOf(race.id);
   const fix = <T extends { tactic: Tactic }>(x: T): T => (typeof x.tactic === 'string' ? { ...x, tactic: tacticObj(x.tactic as unknown as string) } : x);
   if (race.runners)
     race.runners = (race.runners as unknown[]).map((x) => {
+      if (typeof x === 'number' || (Array.isArray(x) && x.length === 3)) return x as unknown as Runner;
       if (!Array.isArray(x)) return fix(x as Runner);
       const [horseId, stableId, jockeyId, stall, weightLb, allowanceLb, assignedLb, tactic] = x as [string, string, string, number, number, number, number, string];
       return { horseId, stableId, jockeyId, stall, weightLb, allowanceLb, assignedLb, tactic: tacticObj(tactic) };
     });
   race.entries = race.entries.map(fix);
   return race;
+}
+
+/** Zweiter Schritt: Starter-Verweise aus den Start-Datensätzen auflösen. */
+export function resolveRunners(race: Race, runs: Record<string, Run>): void {
+  if (!race.runners) return;
+  race.runners = race.runners.map((x) => {
+    const ref = x as unknown as number | [number, number, number];
+    if (typeof ref !== 'number' && !Array.isArray(ref)) return x;
+    const [k, allowance, assigned] = typeof ref === 'number' ? [ref, 0, null] : ref;
+    const run = runs[race.resultRunIds[k]!]!;
+    return { horseId: run.horseId, stableId: run.stableId, jockeyId: run.jockeyId, stall: run.stall, weightLb: run.weightLb, allowanceLb: allowance, assignedLb: assigned ?? run.weightLb, tactic: { ...run.tactic } };
+  });
+}
+
+/* Ausschreibungen: feste Felder als Werteliste */
+const TPL_KEYS = ['name', 'trackId', 'surface', 'week', 'day', 'raceClass', 'bhaClass', 'distanceM', 'prize', 'entryDeadlineWeeks', 'entryFee', 'maxRunners', 'feature', 'claimPrice'] as const;
+const COND_KEYS = ['ageMin', 'ageMax', 'sex', 'orMin', 'orMax', 'maidenOnly', 'maxWins'] as const;
+const sameKeys = (o: object, keys: readonly string[]) => {
+  const k = Object.keys(o);
+  return k.length === keys.length && keys.every((x) => x in o);
+};
+
+export function packTemplate(t: RaceTemplate): RaceTemplate | Packed {
+  if (!sameKeys(t, ['id', 'conditions', ...TPL_KEYS]) || !sameKeys(t.conditions, COND_KEYS)) return t;
+  const rec = t as unknown as Record<string, unknown>;
+  const cond = t.conditions as unknown as Record<string, unknown>;
+  return { _p: 1, id: t.id, v: TPL_KEYS.map((k) => rec[k]), c: COND_KEYS.map((k) => cond[k]) };
+}
+
+export function unpackTemplate(p: Packed | RaceTemplate): RaceTemplate {
+  const q = p as Packed;
+  if (!q._p) return p as RaceTemplate;
+  const out: Record<string, unknown> = { id: q.id };
+  const v = q.v as unknown[];
+  const c = q.c as unknown[];
+  TPL_KEYS.forEach((k, i) => (out[k] = v[i] ?? null));
+  out.conditions = Object.fromEntries(COND_KEYS.map((k, i) => [k, c[i] ?? null]));
+  return out as unknown as RaceTemplate;
+}
+
+/* Genotyp: Allelwerte (zwei Nachkommastellen) als Zeichenkette mit zwei Zeichen je Wert */
+const B62 = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+const G_OFF = 1922; // 62² = 3844 Werte: -19,22 … +19,21
+
+function encodeAlleles(a: number[]): string | null {
+  let s = '';
+  for (const x of a) {
+    const n = Math.round(x * 100);
+    if (n / 100 !== x || n < -G_OFF || n >= 3844 - G_OFF) return null;
+    const m = n + G_OFF;
+    s += B62[Math.floor(m / 62)]! + B62[m % 62]!;
+  }
+  return s;
+}
+
+function decodeAlleles(s: string): number[] {
+  const out: number[] = [];
+  for (let i = 0; i + 1 < s.length; i += 2) out.push((B62.indexOf(s[i]!) * 62 + B62.indexOf(s[i + 1]!) - G_OFF) / 100);
+  return out;
 }
 
 /**
@@ -148,8 +234,14 @@ export function packHorse(h: Horse, runs: Record<string, Run>): Packed {
   const out: Packed = { ...h, _p: 1 };
   if (h.stats.starts === h.runIds.length && h.runIds.every((id) => runs[id])) delete out.stats;
   // Verläufe als flache Wertelisten
-  out.valueHistory = h.valueHistory.flatMap((x) => [x.weekIndex, x.value]);
+  // Wertverlauf: erste Woche absolut, danach Abstände in Wochen
+  out.valueHistory = { d: h.valueHistory.flatMap((x, i) => [i ? x.weekIndex - h.valueHistory[i - 1]!.weekIndex : x.weekIndex, x.value]) };
   out.ratingHistory = h.ratingHistory.flatMap((x) => [x.season, x.week, x.rating, x.runId]);
+  if (h.genotype) {
+    const loci: Record<string, number[] | string> = {};
+    for (const [k, a] of Object.entries(h.genotype.loci)) if (a) loci[k] = encodeAlleles(a) ?? a;
+    out.genotype = { ...h.genotype, loci };
+  }
   return out;
 }
 
@@ -159,6 +251,17 @@ export function unpackHorse(p: Packed, runs: Record<string, Run>): Horse {
   void _p;
   const h = rest as unknown as Horse;
   if (!h.stats) h.stats = computeHorseStats(h.runIds.map((id) => runs[id]!));
+  if (h.genotype) for (const [k, a] of Object.entries(h.genotype.loci)) if (typeof a === 'string') (h.genotype.loci as Record<string, number[]>)[k] = decodeAlleles(a);
+  const vhd = (h.valueHistory as unknown as { d?: number[] }).d;
+  if (vhd) {
+    const out: Horse['valueHistory'] = [];
+    let wi = 0;
+    for (let i = 0; i + 1 < vhd.length; i += 2) {
+      wi = i ? wi + vhd[i]! : vhd[i]!;
+      out.push({ weekIndex: wi, value: vhd[i + 1]! });
+    }
+    h.valueHistory = out;
+  }
   const vh = h.valueHistory as unknown[];
   if (vh.length && typeof vh[0] === 'number') {
     const out: Horse['valueHistory'] = [];
@@ -175,21 +278,28 @@ export function unpackHorse(p: Packed, runs: Record<string, Run>): Horse {
 }
 
 /** Verdichtet alle Pferde, Starts und Rennen eines Spielstands (für den Export). */
-export function packAll(g: Pick<GameState, 'horses' | 'runs' | 'races' | 'templates'>): { horses: Record<string, Packed>; runs: Record<string, Packed>; races: Record<string, Packed> } {
+export function packAll(g: Pick<GameState, 'horses' | 'runs' | 'races' | 'templates'>): { horses: Record<string, Packed>; runs: Record<string, Packed>; races: Record<string, Packed>; templates: Record<string, Packed | RaceTemplate> } {
   const runs: Record<string, Packed> = {};
   for (const [id, r] of Object.entries(g.runs)) runs[id] = packRun(r, g);
   const races: Record<string, Packed> = {};
-  for (const [id, r] of Object.entries(g.races)) races[id] = packRace(r);
+  for (const [id, r] of Object.entries(g.races)) races[id] = packRace(r, g.runs);
   const horses: Record<string, Packed> = {};
   for (const [id, h] of Object.entries(g.horses)) horses[id] = packHorse(h, g.runs);
-  return { horses, runs, races };
+  const templates: Record<string, Packed | RaceTemplate> = {};
+  for (const [id, t] of Object.entries(g.templates)) templates[id] = packTemplate(t);
+  return { horses, runs, races, templates };
 }
 
 /** Gegenstück zu packAll; unverdichtete Einträge (alte Spielstände) bleiben unverändert. */
-export function unpackAll(raw: { horses: Record<string, unknown>; runs: Record<string, unknown>; races: Record<string, unknown>; templates: Record<string, RaceTemplate> }): void {
+export function unpackAll(raw: { horses: Record<string, unknown>; runs: Record<string, unknown>; races: Record<string, unknown>; templates: Record<string, unknown> }): void {
+  for (const [id, t] of Object.entries(raw.templates)) raw.templates[id] = unpackTemplate(t as Packed);
   for (const [id, r] of Object.entries(raw.races)) raw.races[id] = unpackRace(r as Packed);
-  const l = { races: raw.races as Record<string, Race>, templates: raw.templates };
+  const races = raw.races as Record<string, Race>;
+  const raceOf: Record<string, string> = {};
+  for (const r of Object.values(races)) for (const id of r.resultRunIds) raceOf[id] = r.id;
+  const l = { races, templates: raw.templates as Record<string, RaceTemplate>, raceOf };
   for (const [id, r] of Object.entries(raw.runs)) raw.runs[id] = unpackRun(r as Packed, l);
   const runs = raw.runs as Record<string, Run>;
+  for (const r of Object.values(races)) resolveRunners(r, runs);
   for (const [id, h] of Object.entries(raw.horses)) raw.horses[id] = unpackHorse(h as Packed, runs);
 }

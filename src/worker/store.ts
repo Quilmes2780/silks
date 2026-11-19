@@ -3,7 +3,7 @@ import type { GameState } from '../engine/game/state';
 import type { Horse, RaceInstance, RaceTemplate, Run } from '../engine/types';
 import type { SaveMeta } from './protocol';
 import { migrateGame, SAVE_VERSION } from '../engine/game/migrate';
-import { packAll, packHorse, packRace, packRun, unpackAll } from '../engine/game/archive';
+import { packAll, packHorse, packRace, packRun, packTemplate, unpackAll } from '../engine/game/archive';
 
 /**
  * Persistenz in IndexedDB über Dexie. Mehrere Spielstände; große Sammlungen (Pferde, Starts,
@@ -25,7 +25,7 @@ class SilksDb extends Dexie {
   /** Starts und Rennen liegen in verdichteter Form (siehe engine/game/archive.ts) */
   runs!: Table<Row<unknown>, [string, string]>;
   races!: Table<Row<unknown>, [string, string]>;
-  templates!: Table<Row<RaceTemplate>, [string, string]>;
+  templates!: Table<Row<unknown>, [string, string]>;
 
   constructor(name = 'silks-and-stamina') {
     super(name);
@@ -88,9 +88,9 @@ export class SaveStore {
       if (h.length) await this.db.horses.bulkPut(h);
       const r = pick(g.runs, scope.runs, (x: Run) => packRun(x, g));
       if (r.length) await this.db.runs.bulkPut(r);
-      const ra = pick(g.races, scope.races, (x: RaceInstance) => packRace(x));
+      const ra = pick(g.races, scope.races, (x: RaceInstance) => packRace(x, g.runs));
       if (ra.length) await this.db.races.bulkPut(ra);
-      const t = pick(g.templates, scope.templates);
+      const t = pick(g.templates, scope.templates, (x: RaceTemplate) => packTemplate(x));
       if (t.length) await this.db.templates.bulkPut(t);
     });
     return meta;
@@ -110,7 +110,7 @@ export class SaveStore {
       this.db.races.where('saveId').equals(id).toArray(),
       this.db.templates.where('saveId').equals(id).toArray(),
     ]);
-    const raw = { horses: toMap(horses), runs: toMap(runs), races: toMap(races), templates: toMap(templates) as Record<string, RaceTemplate> };
+    const raw = { horses: toMap(horses), runs: toMap(runs), races: toMap(races), templates: toMap(templates) };
     unpackAll(raw);
     const g = { ...core.data, ...raw, touchedHorses: [], touchedRaces: [] } as GameState;
     return g;
